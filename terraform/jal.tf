@@ -13,108 +13,97 @@ resource "aws_instance" "rancher01" {
   availability_zone      = "us-east-2a"
   instance_type          = "t2.small"
   key_name               = aws_key_pair.beantown_key.id
-  vpc_security_group_ids = [aws_security_group.jal_default.id]
-  subnet_id              = aws_subnet.jal_subnet_public_2a.id
+  vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
+  subnet_id              = aws_subnet.jalnet_ops.id
   ebs_block_device {
     device_name = "/dev/xvda"
     volume_type = "gp2"
     volume_size = 10
   }
+
   connection {
     type        = "ssh"
     private_key = file("~/.ssh/beantown_aws_rsa")
     user        = "ec2-user"
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
   }
+
   provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm",
-      "sudo yum install -y certbot fail2ban",
-      "sudo amazon-linux-extras install -y docker",
-      "sudo service docker start",
-      "sudo systemctl enable docker"
-    ]
+    script = "files/bootstrap_rancher.sh"
   }
+
   tags = {
     Name         = "rancher01"
     role         = "rancher"
     region       = var.aws_region
-    aws-resource = "instance"
     provisioner  = "terraform"
   }
 }
 
 resource "aws_instance" "jke_control01" {
-  availability_zone      = "us-east-2a"
+  availability_zone      = "us-east-2b"
   ami                    = lookup(var.aws_amis, var.aws_region)
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.beantown_key.id
-  vpc_security_group_ids = [aws_security_group.jal_default.id]
-  subnet_id              = aws_subnet.jal_subnet_public_2a.id
+  vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
+  subnet_id              = aws_subnet.jalnet_private_2b.id
+
   ebs_block_device {
     device_name = "/dev/xvda"
     volume_type = "gp2"
     volume_size = 15
   }
+
   connection {
     type        = "ssh"
     private_key = file("~/.ssh/beantown_aws_rsa")
     user        = "ec2-user"
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
   }
+
   provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm",
-      "sudo yum install -y fail2ban",
-      "sudo amazon-linux-extras install -y docker",
-      "sudo service docker start",
-      "sudo systemctl enable docker"
-    ]
+    script = "files/bootstrap_docker.sh"
   }
+
   tags = {
     Name         = "jke-control01"
-    role         = "k8s-control"
+    role         = "jke"
+    jke-type     = "control"
     region       = var.aws_region
-    aws-resource = "instance"
     provisioner  = "terraform"
   }
 }
 
 resource "aws_instance" "jke_worker01" {
-  availability_zone      = "us-east-2a"
+  availability_zone      = "us-east-2c"
   ami                    = lookup(var.aws_amis, var.aws_region)
   instance_type          = "t2.small"
   key_name               = aws_key_pair.beantown_key.id
-  vpc_security_group_ids = [aws_security_group.jal_default.id]
-  subnet_id              = aws_subnet.jal_subnet_public_2a.id
+  vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
+  subnet_id              = aws_subnet.jalnet_private_2c.id
+
   ebs_block_device {
     device_name = "/dev/xvda"
     volume_type = "gp2"
     volume_size = 50
   }
+
   connection {
     type        = "ssh"
     private_key = file("~/.ssh/beantown_aws_rsa")
     user        = "ec2-user"
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
   }
+
   provisioner "remote-exec" {
-    inline = [
-      "sudo yum update -y",
-      "sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm",
-      "sudo yum install -y fail2ban",
-      "sudo amazon-linux-extras install -y docker",
-      "sudo service docker start",
-      "sudo systemctl enable docker"
-    ]
+    script = "files/bootstrap_docker.sh"
   }
+
   tags = {
     Name         = "jke-worker01"
-    role         = "jke-worker"
+    role         = "jke"
+    jke-type     = "worker"
     region       = var.aws_region
-    aws-resource = "instance"
     provisioner  = "terraform"
   }
 }

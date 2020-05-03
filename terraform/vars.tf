@@ -1,5 +1,10 @@
 variable "aws_region" { default = "us-east-2" }
 
+variable "environment" {
+  description = "The name of the environment."
+  default     = "prod"
+}
+
 variable "aws_amis" {
   default = {
     us-east-1 = "ami-00068cd7555f543d5"

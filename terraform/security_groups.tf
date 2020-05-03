@@ -19,6 +19,14 @@ resource "aws_security_group" "load_balancer" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "TCP access from my IP"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["72.74.95.20/32"]
+  }
+
   egress {
     description = "Outbound internet access"
     from_port   = 0
@@ -50,11 +58,26 @@ resource "aws_security_group" "jal_default" {
   }
 
   ingress {
+    from_port   = 8
+    to_port     = 0
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     description = "TCP access from the VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "tcp"
     cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  ingress {
+    description = "TCP access from my IP"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["72.74.95.20/32"]
   }
 
   egress {
