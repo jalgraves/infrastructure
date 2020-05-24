@@ -22,7 +22,7 @@ resource "aws_security_group" "load_balancer" {
   ingress {
     description = "TCP access from my IP"
     from_port   = 0
-    to_port     = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["72.74.95.20/32"]
   }
@@ -38,15 +38,15 @@ resource "aws_security_group" "load_balancer" {
 
 resource "aws_security_group" "jal_default" {
   name        = "jal_default_sg"
-  description = "Default JAL security group"
+  description = "JAL security group"
   vpc_id      = aws_vpc.prod.id
 
   ingress {
-    description = "SSH access from anywhere"
+    description = "SSH access from my IP"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["72.74.95.20/32"]
   }
 
   ingress {
@@ -58,16 +58,17 @@ resource "aws_security_group" "jal_default" {
   }
 
   ingress {
-    from_port   = 8
-    to_port     = 0
-    protocol    = "icmp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTPS access from ALB"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    security_groups = [aws_security_group.load_balancer.id]
   }
 
   ingress {
     description = "TCP access from the VPC"
     from_port   = 0
-    to_port     = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["10.0.0.0/16"]
   }

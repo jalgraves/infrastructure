@@ -1,6 +1,11 @@
+terraform {
+  required_version = ">= 0.12, < 0.13"
+}
+
 provider "aws" {
   profile = "beantown"
   region  = var.aws_region
+  shared_credentials_file = "/Users/tf_user/.aws/creds"
 }
 
 resource "aws_key_pair" "beantown_key" {
@@ -11,7 +16,7 @@ resource "aws_key_pair" "beantown_key" {
 resource "aws_instance" "rancher01" {
   ami                    = lookup(var.aws_amis, var.aws_region)
   availability_zone      = "us-east-2a"
-  instance_type          = "t2.small"
+  instance_type          = "t3a.small"
   key_name               = aws_key_pair.beantown_key.id
   vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
   subnet_id              = aws_subnet.jalnet_ops.id
@@ -43,16 +48,10 @@ resource "aws_instance" "rancher01" {
 resource "aws_instance" "jke_control01" {
   availability_zone      = "us-east-2b"
   ami                    = lookup(var.aws_amis, var.aws_region)
-  instance_type          = "t2.micro"
+  instance_type          = "t3a.small"
   key_name               = aws_key_pair.beantown_key.id
   vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
   subnet_id              = aws_subnet.jalnet_private_2b.id
-
-  ebs_block_device {
-    device_name = "/dev/xvda"
-    volume_type = "gp2"
-    volume_size = 15
-  }
 
   connection {
     type        = "ssh"
@@ -77,7 +76,7 @@ resource "aws_instance" "jke_control01" {
 resource "aws_instance" "jke_worker01" {
   availability_zone      = "us-east-2c"
   ami                    = lookup(var.aws_amis, var.aws_region)
-  instance_type          = "t2.small"
+  instance_type          = "t3a."
   key_name               = aws_key_pair.beantown_key.id
   vpc_security_group_ids = [aws_security_group.jal_default.id, aws_security_group.load_balancer.id]
   subnet_id              = aws_subnet.jalnet_private_2c.id
@@ -106,4 +105,15 @@ resource "aws_instance" "jke_worker01" {
     region       = var.aws_region
     provisioner  = "terraform"
   }
+}
+
+resource "aws_volume_attachment" "ebs_att" {
+  device_name = "/dev/xvda"
+  volume_id   = aws_ebs_volume.jke_control_vol.id
+  instance_id = aws_instance.jke_control01.id
+}
+
+resource "aws_ebs_volume" "jke_control_vol" {
+  availability_zone = "us-east-2b"
+  size              = 10
 }
