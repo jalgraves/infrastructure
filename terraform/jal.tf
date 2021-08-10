@@ -33,10 +33,10 @@ resource "aws_instance" "rancher01" {
   }
 
   tags = {
-    Name         = "rancher01"
-    role         = "rancher"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "rancher01"
+    role        = "rancher"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
 
@@ -66,11 +66,11 @@ resource "aws_instance" "jke_control01" {
   }
 
   tags = {
-    Name         = "jke-control01"
-    role         = "jke"
-    jke-type     = "control"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jke-control01"
+    role        = "jke"
+    jke-type    = "control"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
 
@@ -100,10 +100,10 @@ resource "aws_instance" "jke_worker01" {
   }
 
   tags = {
-    Name         = "jke-worker01"
-    role         = "jke"
-    jke-type     = "worker"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jke-worker01"
+    role        = "jke"
+    jke-type    = "worker"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }

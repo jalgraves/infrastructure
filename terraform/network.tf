@@ -3,9 +3,9 @@ resource "aws_vpc" "prod" {
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
-    Name         = "jpc-prod"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jpc-prod"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
 
@@ -25,9 +25,9 @@ resource "aws_subnet" "jalnet_ops" {
   cidr_block              = "10.0.0.0/24"
   map_public_ip_on_launch = true
   tags = {
-    Name         = "jalnet-ops"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jalnet-ops"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
 
@@ -38,9 +38,9 @@ resource "aws_subnet" "jalnet_private_2b" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name         = "jalnet-2a"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jalnet-2a"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
 
@@ -50,8 +50,8 @@ resource "aws_subnet" "jalnet_private_2c" {
   cidr_block              = "10.0.2.0/24"
   map_public_ip_on_launch = true
   tags = {
-    Name         = "jalnet-2b"
-    region       = var.aws_region
-    provisioner  = "terraform"
+    Name        = "jalnet-2b"
+    region      = var.aws_region
+    provisioner = "terraform"
   }
 }
