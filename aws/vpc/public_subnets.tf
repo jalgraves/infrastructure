@@ -4,8 +4,8 @@ resource "aws_subnet" "public" {
   count                                          = length(local.configs.availability_zones)
   vpc_id                                         = aws_vpc.this.id
   availability_zone                              = local.configs.availability_zones[count.index]
-  cidr_block                                     = local.configs.ipv4.subnet_cidrs[count.index]
-  ipv6_cidr_block                                = local.configs.ipv6.subnet_cidrs[count.index]
+  cidr_block                                     = local.public_ipv4_cidrs[count.index]
+  ipv6_cidr_block                                = local.public_ipv6_cidrs[count.index]
   assign_ipv6_address_on_creation                = false
   enable_dns64                                   = true
   map_public_ip_on_launch                        = true
@@ -34,12 +34,6 @@ resource "aws_route_table" "public" {
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public[0].id
   route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route" "public" {
-  route_table_id         = aws_route_table.public.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this.id
 }
 
 resource "aws_network_acl" "public" {

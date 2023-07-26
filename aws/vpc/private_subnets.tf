@@ -6,8 +6,8 @@ resource "aws_subnet" "private" {
   count                                          = length(local.configs.availability_zones)
   vpc_id                                         = aws_vpc.this.id
   availability_zone                              = local.configs.availability_zones[count.index]
-  cidr_block                                     = local.configs.ipv4.subnet_cidrs[count.index]
-  ipv6_cidr_block                                = local.configs.ipv6.subnet_cidrs[count.index]
+  cidr_block                                     = local.private_ipv4_cidrs[count.index]
+  ipv6_cidr_block                                = local.private_ipv6_cidrs[count.index]
   assign_ipv6_address_on_creation                = false
   enable_dns64                                   = true
   enable_resource_name_dns_a_record_on_launch    = local.configs.ipv4.enable_resource_name_dns_a_record_on_launch
