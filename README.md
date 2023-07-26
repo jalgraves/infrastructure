@@ -1,2 +1,2 @@
 # infrastructure
-AWS Terraform Infrastructure Code
+Terraform Code

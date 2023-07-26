@@ -1,0 +1,24 @@
+default_stages: [commit, manual]
+
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+
+  - repo: https://github.com/hqoapp/pre-commit-hooks
+    rev: v1.3.2
+    hooks:
+      - id: validate-author-email
+      - id: add-msg-issue-prefix
+        stages: [prepare-commit-msg]
+      - id: circleci-config-validate
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.55.0
+    hooks:
+      - id: terraform_fmt

@@ -1,0 +1,17 @@
+# This file ignores directories uploaded by Terraform cloud when running remote plans and applies
+**/*
+!datadog/**/
+!aws/
+!tailscale/
+!k8s/
+k8s/.terraform/
+aws/vpc/.terraform/
+aws/eks/.terraform/
+aws/rds/.terraform/
+aws/route53/.terraform/
+aws/ecr/.terraform/
+tailscale/.terraform/
+datadog/development/.terraform/
+datadog/load/.terraform/
+datadog/preprod/.terraform/
+datadog/production/.terraform/
