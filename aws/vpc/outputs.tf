@@ -8,9 +8,9 @@ output "vpc" {
   }
 }
 
-output subnets {
-  value  = {
-    public ={
+output "subnets" {
+  value = {
+    public = {
       ids = aws_subnet.public[*].id
       ipv4 = {
         cidrs = aws_subnet.public[*].cidr_block
@@ -19,7 +19,7 @@ output subnets {
         cidrs = aws_subnet.public[*].ipv6_cidr_block
       }
     }
-    private ={
+    private = {
       ids = aws_subnet.private[*].id
       ipv4 = {
         cidrs = aws_subnet.private[*].cidr_block
