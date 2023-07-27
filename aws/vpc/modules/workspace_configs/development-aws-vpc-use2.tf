@@ -8,7 +8,7 @@ locals {
     # Two subnets (one public, one private) will be created for each AZ passed in
     availability_zones = ["us-east-2a", "us-east-2b"]
     cdn = {
-      aliases = ["cdn.jalgraves.us-east-1.jalgraves.com"]
+      aliases = []
       enabled = false
     }
     enable_dns_hostnames = true
@@ -30,5 +30,9 @@ locals {
     region                              = "us-east-2"
     # region_code is part of naming convention used to build hostnames and name other resources
     region_code = "use2"
+    tailscale = {
+      enabled       = true
+      instance_type = "t3.nano"
+    }
   }
 }

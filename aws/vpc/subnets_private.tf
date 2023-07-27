@@ -42,8 +42,16 @@ resource "aws_route" "private6" {
   egress_only_gateway_id      = aws_egress_only_internet_gateway.this.id
 }
 
+resource "aws_route" "private" {
+  route_table_id         = aws_route_table.private.id
+  nat_gateway_id         = aws_nat_gateway.this.id
+  destination_cidr_block = local.configs.ipv4.destination_cidr_block
+  depends_on             = [aws_route_table.private]
+}
+
 resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.private[0].id
+  count          = length(local.configs.availability_zones)
+  subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
 
@@ -94,18 +102,6 @@ resource "aws_network_acl_rule" "private6_ingress" {
 
 resource "aws_network_acl_rule" "private6_egress" {
   network_acl_id = aws_network_acl.private.id
-  rule_action    = "allow"
-  rule_number    = 111
-
-  egress          = true
-  ipv6_cidr_block = "::/0"
-  from_port       = 0
-  to_port         = 0
-  protocol        = "-1"
-}
-
-resource "aws_network_acl_rule" "public6_egress" {
-  network_acl_id = aws_network_acl.public.id
   rule_action    = "allow"
   rule_number    = 111
 

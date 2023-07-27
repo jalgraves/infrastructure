@@ -22,7 +22,6 @@ locals {
       speculative_enabled   = true
       trigger_patterns      = ["aws/ecr/*.tf", "aws/ecr/modules/workspace_configs/development-aws-ecr-*.tf", "aws/ecr/modules/workspace_configs/outputs.tf"]
       use_tfc               = false
-      use_vault             = false
       global_remote_state   = true
     }
 
@@ -32,7 +31,7 @@ locals {
       branch                = "master"
       env                   = "development"
       directory             = "kubernetes"
-      execution_mode        = "remote"
+      execution_mode        = "local"
       file_triggers_enabled = true
       queue_all_runs        = false
       region_codes          = ["use1", "use2"]
@@ -45,7 +44,6 @@ locals {
         "aws/kubernetes/lambda_functions/*.tpl"
       ]
       use_tfc             = true
-      use_vault           = true
       global_remote_state = true
     }
 
@@ -122,8 +120,8 @@ locals {
         "aws/kubernetes/modules/helm/*.tf",
         "aws/kubernetes/lambda_functions/*.tpl"
       ]
-      use_tfc             = true
-      use_vault           = true
+      use_tfc = true
+
       global_remote_state = true
     }
 

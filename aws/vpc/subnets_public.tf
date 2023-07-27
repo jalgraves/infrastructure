@@ -32,7 +32,8 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public[0].id
+  count          = length(local.configs.availability_zones)
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
@@ -45,6 +46,18 @@ resource "aws_network_acl" "public" {
   }
 }
 
+resource "aws_network_acl_rule" "public4_ingress" {
+  network_acl_id = aws_network_acl.public.id
+  rule_action    = "allow"
+  rule_number    = 100
+
+  egress     = false
+  cidr_block = "0.0.0.0/0"
+  from_port  = 0
+  to_port    = 0
+  protocol   = "-1"
+}
+
 resource "aws_network_acl_rule" "public4_egress" {
   network_acl_id = aws_network_acl.public.id
   rule_action    = "allow"
@@ -55,4 +68,23 @@ resource "aws_network_acl_rule" "public4_egress" {
   from_port  = 0
   to_port    = 0
   protocol   = "-1"
+}
+
+resource "aws_network_acl_rule" "public6_egress" {
+  network_acl_id = aws_network_acl.public.id
+  rule_action    = "allow"
+  rule_number    = 111
+
+  egress          = true
+  ipv6_cidr_block = "::/0"
+  from_port       = 0
+  to_port         = 0
+  protocol        = "-1"
+}
+
+resource "aws_route" "public" {
+  route_table_id         = aws_route_table.public.id
+  gateway_id             = aws_internet_gateway.this.id
+  destination_cidr_block = local.configs.ipv4.destination_cidr_block
+  depends_on             = [aws_route_table.public]
 }

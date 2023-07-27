@@ -29,7 +29,7 @@ resource "aws_vpc" "this" {
   enable_dns_support               = local.configs.enable_dns_support
   assign_generated_ipv6_cidr_block = local.configs.assign_generated_ipv6_cidr_block
   tags = {
-    Name = "${local.configs.env}-${local.configs.region_code}"
+    "Name" = "${local.configs.env}-${local.configs.region_code}"
   }
 }
 
@@ -37,13 +37,13 @@ resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    Name = "${local.configs.env}-${local.configs.region_code}"
+    "Name" = "${local.configs.env}-${local.configs.region_code}"
   }
 }
 
 resource "aws_eip" "this" {
   tags = {
-    Name = "${local.configs.env}-${local.configs.region_code}"
+    "Name" = "${local.configs.env}-${local.configs.region_code}"
   }
   lifecycle {
     create_before_destroy = true
@@ -59,7 +59,7 @@ data "aws_availability_zones" "default" {
 
 locals {
   az_count           = length(data.aws_availability_zones.default.names)
-  bits               = ceil(log(local.az_count, 2)) * 4
+  bits               = ceil(log(local.az_count, 2)) * (local.az_count * 2)
   ipv4_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc_ipam_pool_cidr.ipv4.cidr, local.bits, index)]
   ipv6_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc.this.ipv6_cidr_block, 8, index)]
   public_ipv4_cidrs  = slice(local.ipv4_cidrs, 0, 2)

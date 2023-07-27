@@ -11,12 +11,12 @@ resource "aws_nat_gateway" "this" {
   }
 }
 
-resource "aws_route" "nat4" {
-  route_table_id         = aws_route_table.public.id
-  nat_gateway_id         = aws_nat_gateway.this.id
-  destination_cidr_block = local.configs.ipv4.destination_cidr_block
-  depends_on             = [aws_route_table.private]
-}
+# resource "aws_route" "nat4" {
+#   route_table_id         = aws_route_table.public.id
+#   nat_gateway_id         = aws_nat_gateway.this.id
+#   destination_cidr_block = local.configs.ipv4.destination_cidr_block
+#   depends_on             = [aws_route_table.private]
+# }
 
 resource "aws_route" "private_nat64" {
   route_table_id              = aws_route_table.private.id
@@ -25,9 +25,9 @@ resource "aws_route" "private_nat64" {
   depends_on                  = [aws_route_table.private]
 }
 
-resource "aws_route" "public_nat64" {
-  route_table_id              = aws_route_table.public.id
-  nat_gateway_id              = aws_nat_gateway.this.id
-  destination_ipv6_cidr_block = local.configs.ipv6.destination_cidr_block
-  depends_on                  = [aws_route_table.public]
-}
+# resource "aws_route" "public_nat64" {
+#   route_table_id              = aws_route_table.public.id
+#   nat_gateway_id              = aws_nat_gateway.this.id
+#   destination_ipv6_cidr_block = local.configs.ipv6.destination_cidr_block
+#   depends_on                  = [aws_route_table.public]
+# }
