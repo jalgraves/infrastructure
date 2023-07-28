@@ -164,7 +164,7 @@ helm upgrade cilium cilium/cilium --install \
   --namespace kube-system --reuse-values \
   --set hubble.relay.enabled=true \
   --set hubble.ui.enabled=true \
-  --set ipam.operator.clusterPoolIPv4PodCIDR="${cluster_cidr}"
+  --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="${cluster_cidr}"
 
 # Install Cilium's CLI tool for troubleshooting
 curl \
@@ -276,7 +276,7 @@ kubectl apply -n kube-system -f secret.yaml
 AUTOMATED_USER_TOKEN=$(kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-system get secret ${automated_user} -o jsonpath='{.data.token}'| base64 --decode || true)
 
 # Kubelet CSR signer
-kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
+#kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
 
 # Setup automated user auth config
 echo "Setting up automated user auth config...."
