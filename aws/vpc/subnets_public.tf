@@ -6,8 +6,8 @@ resource "aws_subnet" "public" {
   availability_zone                              = local.configs.availability_zones[count.index]
   cidr_block                                     = local.public_ipv4_cidrs[count.index]
   ipv6_cidr_block                                = local.public_ipv6_cidrs[count.index]
-  assign_ipv6_address_on_creation                = false
-  enable_dns64                                   = true
+  assign_ipv6_address_on_creation                = true
+  enable_dns64                                   = local.configs.ipv6.enable_dns64
   map_public_ip_on_launch                        = true
   enable_resource_name_dns_a_record_on_launch    = local.configs.ipv4.enable_resource_name_dns_a_record_on_launch
   enable_resource_name_dns_aaaa_record_on_launch = local.configs.ipv6.enable_resource_name_dns_aaaa_record_on_launch
@@ -68,6 +68,18 @@ resource "aws_network_acl_rule" "public4_egress" {
   from_port  = 0
   to_port    = 0
   protocol   = "-1"
+}
+
+resource "aws_network_acl_rule" "public6_ingress" {
+  network_acl_id = aws_network_acl.public.id
+  rule_action    = "allow"
+  rule_number    = 111
+
+  egress          = false
+  ipv6_cidr_block = "::/0"
+  from_port       = 0
+  to_port         = 0
+  protocol        = "-1"
 }
 
 resource "aws_network_acl_rule" "public6_egress" {

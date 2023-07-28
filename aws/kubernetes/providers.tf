@@ -8,7 +8,11 @@ terraform {
     # Provider versions are pinned to avoid unexpected upgrades
     aws = {
       source  = "hashicorp/aws"
-      version = "5.9.0"
+      version = "5.10.0"
+    }
+    template = {
+      source = "hashicorp/template"
+      version = "2.1.0"
     }
     tfe = {
       source  = "hashicorp/tfe"

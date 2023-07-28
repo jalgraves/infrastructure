@@ -26,7 +26,7 @@ resource "tfe_workspace" "this" {
   assessments_enabled   = local.configs.assessments_enabled
   name                  = "${local.configs.env}-aws-${local.configs.directory}-${each.value}"
   description           = "Workspace for ${local.configs.env} AWS ${upper(local.configs.directory)} resources. Created via Terraform workspace ${terraform.workspace}"
-  organization          = local.configs.organization
+  organization          = var.organization
   execution_mode        = local.configs.execution_mode
   file_triggers_enabled = local.configs.file_triggers_enabled
   global_remote_state   = local.configs.global_remote_state
@@ -38,7 +38,7 @@ resource "tfe_workspace" "this" {
   working_directory     = "aws/${local.configs.directory}"
   vcs_repo {
     branch             = local.configs.branch
-    identifier         = "${local.configs.organization}/infrastructure"
+    identifier         = "${var.organization}/infrastructure"
     ingress_submodules = false
     oauth_token_id     = var.oauth_token_id
   }

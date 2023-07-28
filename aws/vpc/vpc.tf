@@ -4,26 +4,27 @@
 
 data "aws_region" "current" {}
 
-resource "aws_vpc_ipam" "this" {
-  operating_regions {
-    region_name = data.aws_region.current.name
-  }
-}
+# resource "aws_vpc_ipam" "this" {
+#   operating_regions {
+#     region_name = data.aws_region.current.name
+#   }
+# }
 
-resource "aws_vpc_ipam_pool" "ipv4" {
-  address_family = "ipv4"
-  ipam_scope_id  = aws_vpc_ipam.this.private_default_scope_id
-  locale         = data.aws_region.current.name
-}
+# resource "aws_vpc_ipam_pool" "ipv4" {
+#   address_family = "ipv4"
+#   ipam_scope_id  = aws_vpc_ipam.this.private_default_scope_id
+#   locale         = data.aws_region.current.name
+# }
 
-resource "aws_vpc_ipam_pool_cidr" "ipv4" {
-  ipam_pool_id = aws_vpc_ipam_pool.ipv4.id
-  cidr         = local.configs.ipv4.cidr_block
-}
+# resource "aws_vpc_ipam_pool_cidr" "ipv4" {
+#   ipam_pool_id = aws_vpc_ipam_pool.ipv4.id
+#   cidr         = local.configs.ipv4.cidr_block
+# }
 
 resource "aws_vpc" "this" {
-  ipv4_ipam_pool_id                = aws_vpc_ipam_pool.ipv4.id
-  ipv4_netmask_length              = local.configs.ipv4.netmask_length
+  #ipv4_ipam_pool_id                = aws_vpc_ipam_pool.ipv4.id
+  #ipv4_netmask_length              = local.configs.ipv4.netmask_length
+  cidr_block                       = local.configs.ipv4.cidr_block
   instance_tenancy                 = local.configs.instance_tenancy
   enable_dns_hostnames             = local.configs.enable_dns_hostnames
   enable_dns_support               = local.configs.enable_dns_support
@@ -58,9 +59,10 @@ data "aws_availability_zones" "default" {
 }
 
 locals {
-  az_count           = length(data.aws_availability_zones.default.names)
-  bits               = ceil(log(local.az_count, 2)) * (local.az_count * 2)
-  ipv4_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc_ipam_pool_cidr.ipv4.cidr, local.bits, index)]
+  az_count = length(data.aws_availability_zones.default.names)
+  bits     = ceil(log(local.az_count, 2)) * 2
+  #ipv4_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc_ipam_pool_cidr.ipv4.cidr, local.bits, index)]
+  ipv4_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc.this.cidr_block, local.bits, index)]
   ipv6_cidrs         = [for index in range(4) : cidrsubnet(aws_vpc.this.ipv6_cidr_block, 8, index)]
   public_ipv4_cidrs  = slice(local.ipv4_cidrs, 0, 2)
   private_ipv4_cidrs = slice(local.ipv4_cidrs, 2, 4)

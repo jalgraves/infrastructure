@@ -13,6 +13,7 @@ output "subnets" {
     public = {
       ids = aws_subnet.public[*].id
       ipv4 = {
+        bits  = local.bits
         cidrs = aws_subnet.public[*].cidr_block
       }
       ipv6 = {
@@ -31,6 +32,11 @@ output "subnets" {
   }
 }
 
-output "aws_vpc_ipam" {
-  value = aws_vpc_ipam.this
+output "tailscale" {
+  value = {
+    key_pair = {
+      id   = aws_key_pair.tailscale[0].id
+      name = aws_key_pair.tailscale[0].key_name
+    }
+  }
 }

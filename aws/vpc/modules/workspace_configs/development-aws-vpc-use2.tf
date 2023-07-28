@@ -23,6 +23,7 @@ locals {
     }
     ipv6 = {
       destination_cidr_block                         = "64:ff9b::/96"
+      enable_dns64                                   = false
       enable_resource_name_dns_aaaa_record_on_launch = false
     }
     max_nats                            = 1

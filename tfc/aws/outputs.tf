@@ -9,3 +9,8 @@ output "workspace_ids" {
     }
   }
 }
+
+output "domain_name" {
+  value     = var.domain_name
+  sensitive = true
+}

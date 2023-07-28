@@ -9,6 +9,6 @@
 # below tfe_output workspaces have already been applied
 
 data "tfe_outputs" "vpc" {
-  organization = "hqo"
+  organization = "jalgraves"
   workspace    = "${local.configs.env}-aws-vpc-${local.configs.region_code}"
 }

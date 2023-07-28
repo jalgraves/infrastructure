@@ -4,12 +4,12 @@
 
 resource "aws_security_group" "internal_traffic" {
   name        = "${local.configs.cluster_name}-internal-traffic"
-  description = "Allow private subnet traffic within vpc. Created via Terraform workspace ${terraform.workspcace}"
-  vpc_id      = data.tfe_outputs.vpc.values.vpc.vpc_id
+  description = "Allow private subnet traffic within vpc. Created via Terraform workspace ${terraform.workspace}"
+  vpc_id      = data.tfe_outputs.vpc.values.vpc.id
 
   # TODO: Break this down to more granular rules
   ingress {
-    description = "Allow all traffic within the private CIDR. Created via Terraform workspace ${terraform.workspcace}"
+    description = "Allow all traffic within the private CIDR. Created via Terraform workspace ${terraform.workspace}"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

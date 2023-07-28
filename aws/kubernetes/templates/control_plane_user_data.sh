@@ -78,8 +78,6 @@ systemctl enable kubelet.service
 echo "Installing Helm"
 curl --silent https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-# helm repo add hqo https://hqo.jfrog.io/artifactory/helm --username ${artifactory_user} --password ${artifactory_apikey} && \
-
 helm repo add cilium https://helm.cilium.io/ && \
   helm repo add jetstack https://charts.jetstack.io &&
   helm repo add aws-ccm https://kubernetes.github.io/cloud-provider-aws && \
@@ -133,7 +131,7 @@ dns: {}
 etcd:
   local:
     dataDir: /var/lib/etcd
-imageRepository: k8s.gcr.io
+imageRepository: registry.k8s.io
 kubernetesVersion: ${kubernetes_version}
 networking:
   dnsDomain: cluster.local
@@ -284,7 +282,7 @@ kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-ce
 echo "Setting up automated user auth config...."
 touch /home/ec2-user/.kube/automated_user
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-credentials ${automated_user} --token="$AUTOMATED_USER_TOKEN"
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cluster_name} --server="https://hks-public.${stage}.${domain_name}:${api_port}"
+kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cluster_name} --server="https://k8s.${region_code}.${domain_name}:${api_port}"
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-context ${automated_user} --cluster=${cluster_name} --user=${automated_user}
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config use-context ${automated_user}
 echo "$AUTOMATED_USER_TOKEN" > /home/ec2-user/automated_user_token.txt
