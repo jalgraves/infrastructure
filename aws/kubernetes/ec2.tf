@@ -2,9 +2,8 @@
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
-data "template_file" "init" {
-  template = file("${path.module}/templates/control_plane_user_data.sh")
-  vars = {
+locals {
+  template_vars = {
     # ha_enabled                    = local.configs.k8s.ha_enabled,
     anonymous_auth_enabled        = local.configs.k8s.anonymous_auth_enabled
     api_port                      = local.configs.k8s.api_port,
@@ -25,13 +24,14 @@ data "template_file" "init" {
     kubelet_authorization_mode    = local.configs.k8s.kubelet_authorization_mode
     kubelet_tls_bootstrap_enabled = local.configs.k8s.kubelet_tls_bootstrap_enabled
     #kubernetes_api_hostname       = local.configs.k8s.api_hostname
-    kubernetes_version            = local.configs.k8s.version
-    listener_arn                  = "foo"
-    metrics_server_enabled        = local.configs.k8s.metrics_server_enabled
-    nlb_hostname                  = var.nlb_hostname
-    region_code                   = local.configs.region_code
-    upload_cert_to_aws_enabled    = local.configs.k8s.upload_cert_to_aws_enabled
+    kubernetes_version         = local.configs.k8s.version
+    listener_arn               = "foo"
+    metrics_server_enabled     = local.configs.k8s.metrics_server_enabled
+    nlb_hostname               = var.nlb_hostname
+    region_code                = local.configs.region_code
+    upload_cert_to_aws_enabled = local.configs.k8s.upload_cert_to_aws_enabled
   }
+  k8s_control_plane_user_data  = templatefile("${path.module}/templates/control_plane_user_data.sh", local.template_vars)
 }
 
 data "aws_ami" "amazon_linux_2" {
@@ -49,18 +49,18 @@ data "aws_ami" "amazon_linux_2" {
   }
 }
 
-resource "aws_instance" "control_plane" {
+resource "aws_instance" "k8s_control_plane" {
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = local.configs.ec2.instance_type
-  user_data                   = data.template_file.init.rendered
+  user_data                   = local.k8s_control_plane_user_data
   security_groups             = [aws_security_group.internal_traffic.id]
-  iam_instance_profile        = aws_iam_instance_profile.control_plane.name
+  iam_instance_profile        = module.iam.k8s_control_plane.instance_profile.name
   associate_public_ip_address = false
   key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
   subnet_id                   = data.tfe_outputs.vpc.values.subnets.private.ids[0]
   tags = {
-    "Name"                                                = "${local.configs.cluster_name}-k8s-control-plane"
-    "Role"                                                = "control-plane"
+    "Name" = "${local.configs.cluster_name}-k8s-control-plane"
+    "Role" = "control-plane"
     #"kubernetes.io/cluster/${local.configs.cluster_name}" = "owned"
   }
   metadata_options {

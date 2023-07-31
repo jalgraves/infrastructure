@@ -30,7 +30,7 @@ locals {
       upload_cert_to_aws_enabled    = false
       version                       = "1.27.0"
     }
-    region =  "us-east-2"
+    region      = "us-east-2"
     region_code = "use2"
   }
 }
