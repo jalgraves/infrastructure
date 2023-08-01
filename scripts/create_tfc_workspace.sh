@@ -48,11 +48,12 @@ if test -z "${TFC_ORG_TOKEN}"; then
 fi
 
 WORKSPACE_DATA=$(curl --request POST \
-  --url https://app.terraform.io/api/v2/organizations/hqo/workspaces \
+  --url https://app.terraform.io/api/v2/organizations/jalgraves/workspaces \
   --header "authorization: Bearer ${TFC_ORG_TOKEN}" \
   --header "content-type: application/vnd.api+json" \
   --data "{\"data\": {\"attributes\": {\"name\": \"${NAME}\",\"execution-mode\": \"local\",\"source-name\": \"${REPOSITORY}\"}}}" | jq .)
 
+echo "${WORKSPACE_DATA}"
 WORKSPACE_ID=$(echo "${WORKSPACE_DATA}" | jq .data.id | tr -d '"')
 WORKSPACE_URL="https://app.terraform.io/api/v2/workspaces/${WORKSPACE_ID}/relationships/tags"
 echo "${WORKSPACE_URL}"

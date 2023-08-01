@@ -2,13 +2,16 @@
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
+data "aws_caller_identity" "current" {}
+
 locals {
+
   template_vars = {
     # ha_enabled                    = local.configs.k8s.ha_enabled,
     anonymous_auth_enabled        = local.configs.k8s.anonymous_auth_enabled
-    api_port                      = local.configs.k8s.api_port,
+    api_port                      = local.configs.k8s.api_port
     automated_user                = var.automated_user
-    aws_account_id                = var.aws_account_id,
+    aws_account_id                = data.aws_caller_identity.current.account_id
     aws_ccm_enabled               = local.configs.k8s.aws_ccm_enabled
     aws_region                    = local.configs.region
     cgroup_driver                 = local.configs.k8s.cgroup_driver
@@ -16,22 +19,22 @@ locals {
     cilium_version                = local.configs.cilium.version
     cluster_cidr                  = local.configs.k8s.cluster_cidr
     cluster_name                  = local.configs.cluster_name
-    control_plane_endpoint        = var.control_plane_endpoint
+    control_plane_endpoint        = local.configs.k8s.control_plane_endpoint
     domain_name                   = var.domain_name
     ebs_csi_driver_enabled        = local.configs.k8s.ebs_csi_driver_enabled
     env                           = local.configs.env
-    istio_version                 = local.configs.istio.version
+    karpenter_instance_profile    = module.iam.karpenter.instance_profile.name
+    karpenter_version             = "v0.27.5"
     kubelet_authorization_mode    = local.configs.k8s.kubelet_authorization_mode
     kubelet_tls_bootstrap_enabled = local.configs.k8s.kubelet_tls_bootstrap_enabled
-    #kubernetes_api_hostname       = local.configs.k8s.api_hostname
-    kubernetes_version         = local.configs.k8s.version
-    listener_arn               = "foo"
-    metrics_server_enabled     = local.configs.k8s.metrics_server_enabled
-    nlb_hostname               = var.nlb_hostname
-    region_code                = local.configs.region_code
-    upload_cert_to_aws_enabled = local.configs.k8s.upload_cert_to_aws_enabled
+    kubernetes_version            = local.configs.k8s.version
+    listener_arn                  = "foo"
+    metrics_server_enabled        = local.configs.k8s.metrics_server_enabled
+    nlb_hostname                  = var.nlb_hostname
+    region_code                   = local.configs.region_code
+    upload_cert_to_aws_enabled    = local.configs.k8s.upload_cert_to_aws_enabled
   }
-  k8s_control_plane_user_data  = templatefile("${path.module}/templates/control_plane_user_data.sh", local.template_vars)
+  k8s_control_plane_user_data = templatefile("${path.module}/templates/control_plane_user_data.sh", local.template_vars)
 }
 
 data "aws_ami" "amazon_linux_2" {

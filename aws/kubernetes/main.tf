@@ -17,7 +17,7 @@ locals {
 module "iam" {
   source = "./modules/iam"
 
-  cluster_name = local.config.cluster_name
+  cluster_name = local.configs.cluster_name
   env          = local.configs.env
   region       = local.configs.region
   region_code  = local.configs.region_code

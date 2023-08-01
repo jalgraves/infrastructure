@@ -22,6 +22,7 @@ locals {
       aws_ccm_enabled               = true
       cgroup_driver                 = "systemd"
       cluster_cidr                  = "10.96.0.0/12"
+      control_plane_endpoint        = "k8s.development.use2.aws.beantownpub.com"
       ebs_csi_driver_enabled        = true
       ha_enabled                    = false
       kubelet_authorization_mode    = "Webhook"

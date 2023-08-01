@@ -84,6 +84,7 @@ helm repo add cilium https://helm.cilium.io/ && \
   helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver && \
   helm repo add bitnami https://charts.bitnami.com/bitnami && \
   helm repo add hcp https://helm.releases.hashicorp.com  && \
+  helm repo add beantown https://beantownpub.github.io/helm/ && \
   helm repo update
 
 
@@ -119,7 +120,6 @@ apiServer:
   timeoutForControlPlane: 7m0s
   certSANs:
   - "${control_plane_endpoint}"
-  - "${nlb_hostname}"
   - "$IP"
   extraArgs:
     cloud-provider: external
@@ -287,6 +287,69 @@ kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-context ${au
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config use-context ${automated_user}
 echo "$AUTOMATED_USER_TOKEN" > /home/ec2-user/automated_user_token.txt
 
+cat <<EOF | tee karpenter-provisioner.yaml
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: ${env}-provisioner
+spec:
+  limits:
+    resources:
+      cpu: 1k
+  providerRef:
+    name: default
+  requirements:
+  - key: kubernetes.io/arch
+    operator: In
+    values:
+    - amd64
+  - key: kubernetes.io/os
+    operator: In
+    values:
+    - linux
+  - key: karpenter.sh/capacity-type
+    operator: In
+    values:
+    - spot
+  - key: karpenter.k8s.aws/instance-family
+    operator: In
+    values:
+    - t3
+    - t3a
+  - key: topology.kubernetes.io/zone
+    operator: In
+    values:
+    - ${aws_region}
+  - key: karpenter.k8s.aws/instance-size
+    operator: In
+    values:
+    - medium
+    - large
+  ttlSecondsAfterEmpty: 30
+EOF
+
+function install_karpenter() {
+  echo "Installing Karpenter"
+  helm upgrade karpenter oci://public.ecr.aws/karpenter \
+    --install \
+    --debug \
+    --create-namespace \
+    --version ${karpenter_version} \
+    --namespace karpenter \
+    --set settings.aws.clusterName=${cluster_name} \
+    --set settings.aws.clusterEndpoint="https://${control_plane_endpoint}:6443" \
+    --set settings.aws.defaultInstanceProfil=${karpenter_instance_profile} \
+    --set replicas=1
+
+  kubectl apply -f karpenter-provisioner.yaml
+
+}
+
+function install_istio() {
+  helm upgrade --install istio beantown/istio \
+    --namespace istio-system
+}
+
 function upload_cert() {
   echo "Uploading new apiserver cert to AWS"
   aws iam upload-server-certificate \
@@ -302,6 +365,11 @@ function attach_cert() {
     --listener-arn ${listener_arn} \
     --certificates CertificateArn="arn:aws:iam::${aws_account_id}:server-certificate/${cluster_name}"
 }
+
+if ! install_karpenter; then
+  echo "Exit status $? installing Karpenter"
+  exit 1
+fi
 
 if [[ ${upload_cert_to_aws_enabled} = "true" ]]; then
   # Upload apiserver certificate to AWS

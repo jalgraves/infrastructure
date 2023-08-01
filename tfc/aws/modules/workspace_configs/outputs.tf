@@ -71,7 +71,7 @@ locals {
       branch                = "master"
       directory             = "route53"
       env                   = "development"
-      execution_mode        = "remote"
+      execution_mode        = "local"
       file_triggers_enabled = true
       organization          = "jalgraves"
       queue_all_runs        = false

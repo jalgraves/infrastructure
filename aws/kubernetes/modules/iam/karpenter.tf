@@ -89,11 +89,12 @@ data "aws_iam_policy_document" "karpenter_assume_role" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
-      type        = "Federated"
-      identifiers = [module.eks_cluster.aws_iam_openid_connect_provider[0].arn]
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
     }
   }
 }
+
 
 resource "aws_iam_role" "karpenter" {
   description        = "Role for EKS nodes created by karpenter auto scaling. Created via Terraform TFC workspace ${terraform.workspace}"

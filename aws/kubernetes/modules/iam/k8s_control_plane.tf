@@ -81,5 +81,5 @@ resource "aws_iam_policy" "k8s_control_plane" {
 
 resource "aws_iam_role_policy_attachment" "k8s_control_plane" {
   role       = aws_iam_role.k8s_control_plane.name
-  policy_arn = aws_iam_policy.k8s_control_plane_policy.arn
+  policy_arn = aws_iam_policy.k8s_control_plane.arn
 }
