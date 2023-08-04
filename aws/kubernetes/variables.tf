@@ -12,3 +12,4 @@ variable "oidc_jwks" {
 variable "tfc_token" {}
 variable "sa_signer_key" {}
 variable "sa_signer_pkcs8_pub" {}
+#variable "sha1_fingerprint" {}

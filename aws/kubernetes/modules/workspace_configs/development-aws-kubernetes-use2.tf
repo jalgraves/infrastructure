@@ -14,7 +14,7 @@ locals {
     }
     env = "development"
     k8s = {
-      anonymous_auth_enabled        = true
+      anonymous_auth_enabled        = false
       api_port                      = 6443
       aws_ccm_enabled               = true
       cgroup_driver                 = "systemd"
@@ -22,7 +22,7 @@ locals {
       ebs_csi_driver_enabled        = true
       ha_enabled                    = false
       kubelet_authorization_mode    = "Webhook"
-      kubelet_tls_bootstrap_enabled = false
+      kubelet_tls_bootstrap_enabled = true
       metrics_server_enabled        = true
       upload_cert_to_aws_enabled    = false
       version                       = "1.27.0"

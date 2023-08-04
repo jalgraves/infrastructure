@@ -93,14 +93,21 @@ data "aws_iam_policy_document" "karpenter_assume_role" {
         "system:serviceaccount:karpenter:karpenter",
       ]
     }
+    condition {
+      test     = "StringEquals"
+      variable = "${var.oidc.issuer}:aud"
+
+      values = [
+        "sts.amazonaws.com"
+      ]
+    }
   }
   statement {
-    effect = "Allow"
+    actions = ["sts:AssumeRole"]
     principals {
       type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
+      identifiers = ["spot.amazonaws.com"]
     }
-    actions = ["sts:AssumeRole"]
   }
 }
 
@@ -112,7 +119,7 @@ resource "aws_iam_role" "karpenter" {
 }
 
 resource "aws_iam_instance_profile" "karpenter" {
-  name = "${title(var.env)}${title(var.region_code)}Karpenter"
+  name = "${title(var.env)}${title(var.region_code)}K8sKarpenter"
   role = aws_iam_role.karpenter.name
 }
 
@@ -129,5 +136,10 @@ resource "aws_iam_role_policy_attachment" "amazon_ec2_container_registry_readonl
 
 resource "aws_iam_role_policy_attachment" "amazon_ssm_managed_instance_core" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.karpenter.name
+}
+
+resource "aws_iam_role_policy_attachment" "amazon_s3_full_access" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
   role       = aws_iam_role.karpenter.name
 }

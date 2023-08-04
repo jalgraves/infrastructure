@@ -14,3 +14,4 @@ variable "oidc_jwks" {
   default = null
 }
 variable "org" {}
+# variable "sha1_fingerprint" {}

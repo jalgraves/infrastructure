@@ -87,6 +87,7 @@ helm repo add cilium https://helm.cilium.io/ && \
   helm repo add bitnami https://charts.bitnami.com/bitnami && \
   helm repo add hcp https://helm.releases.hashicorp.com  && \
   helm repo add beantown https://beantownpub.github.io/helm/ && \
+  helm repo add jetstack https://charts.jetstack.io && \
   helm repo update
 
 # OIDC IRSA
@@ -166,20 +167,13 @@ authorization:
 serverTLSBootstrap: ${kubelet_tls_bootstrap_enabled}
 EOF
 
-# kubeadm init \
-#   --v=6 \
-#   --config /home/ec2-user/manifests/cluster-config.yaml \
-#   --upload-certs
 
 kubeadm init \
   --v=10 \
-  --config /home/ec2-user/manifests/cluster-config.yaml
+  --config /home/ec2-user/manifests/cluster-config.yaml \
+  --upload-certs
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
-
-# MASTER_NODE=$(kubectl get nodes -l role=control-plane --no-headers | awk '{print $1}' | head -n 1)
-# echo "Master node: $MASTER_NODE"
-# kubectl taint node "$MASTER_NODE" node-role.kubernetes.io/master:NoSchedule-
 
 # Install the cluster's CNI. This cluster uses Cilium
 # Hubble displays cluster traffic in a UI
@@ -216,65 +210,6 @@ kubectl create -n kube-system token ${automated_user}
 
 kubectl apply -f - <<EOF
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: node-api-access
-rules:
-- nonResourceURLs:
-  - /api
-  - /api/v1
-  - /apis
-  - /apis/*
-  - /swagger-2.0.0.pb-v1
-  - /openapi
-  - /openapi/v2
-  verbs:
-  - get
-  - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: node-api-access
-subjects:
-- kind: User
-  name: "system:anonymous"
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: node-api-access
-  apiGroup: rbac.authorization.k8s.io
-EOF
-
-kubectl apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: terraform-kube-system
-rules:
-- apiGroups: ["*"]
-  resources: ["*"]
-  verbs: ["*"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: terraform-kube-system
-subjects:
-- kind: User
-  name: "system:anonymous"
-  apiGroup: rbac.authorization.k8s.io
-- kind: Group
-  name: "system:unauthenticated"
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: terraform-kube-system
-  apiGroup: rbac.authorization.k8s.io
-EOF
-
-kubectl apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: ${automated_user}-admin
@@ -302,9 +237,6 @@ EOF
 kubectl apply -n kube-system -f secret.yaml
 AUTOMATED_USER_TOKEN=$(kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-system get secret ${automated_user} -o jsonpath='{.data.token}'| base64 --decode || true)
 
-# Kubelet CSR signer
-#kubectl apply -f https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
-
 # Setup automated user auth config
 echo "Setting up automated user auth config...."
 touch /home/ec2-user/.kube/automated_user
@@ -313,6 +245,35 @@ kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cl
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-context ${automated_user} --cluster=${cluster_name} --user=${automated_user}
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config use-context ${automated_user}
 echo "$AUTOMATED_USER_TOKEN" > /home/ec2-user/automated_user_token.txt
+
+function install_ccm() {
+  helm upgrade aws-ccm aws-ccm/aws-cloud-controller-manager \
+    --install \
+    --set args="{\
+        --enable-leader-migration=true,\
+        --cloud-provider=aws,\
+        --v=2,\
+        --cluster-cidr=${cluster_cidr},\
+        --cluster-name=${cluster_name},\
+        --external-cloud-volume-plugin=aws,\
+        --configure-cloud-routes=false\
+      }"
+}
+
+function install_cert_manager() {
+  helm upgrade cert-manager jetstack/cert-manager \
+    --install \
+    --namespace cert-manager \
+    --create-namespace \
+    --version v1.12.0 \
+    --set prometheus.enabled=false
+}
+
+function install_pod_identity_webhook() {
+  helm upgrade pod-identity-webhook beantown/pod-identity-webhook \
+    --install \
+    --debug
+}
 
 function install_karpenter() {
   echo "Installing Karpenter"
@@ -324,13 +285,13 @@ function install_karpenter() {
     --namespace karpenter \
     --set settings.aws.clusterName=${cluster_name} \
     --set settings.aws.clusterEndpoint="https://$IP:6443" \
-    --set settings.aws.defaultInstanceProfile=${karpenter_instance_profile} \
     --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${karpenter_service_account_role_arn}" \
     --set replicas=1
 
-  helm upgrade karpenter-provisioners beantownpub/karpenter-provisioners \
+  helm upgrade karpenter-provisioners beantown/karpenter-provisioners \
     --install \
     --set clusterName=${cluster_name} \
+    --set aws.instanceProfile=${karpenter_instance_profile} \
     --set env=${env}
 }
 
@@ -380,19 +341,34 @@ function upload_cert() {
 #     --certificates CertificateArn="arn:aws:iam::${aws_account_id}:server-certificate/${cluster_name}"
 # }
 
+if ! install_cert_manager; then
+  echo "Exit status $? installing cert manager"
+fi
+sleep 5
+
+if ! install_pod_identity_webhook; then
+  echo "Exit status $? installing pod identity webhook"
+fi
+sleep 2
+
+if ! install_ccm; then
+  echo "Exit status $? installing CCM"
+fi
+sleep 2
+
 if ! install_karpenter; then
   echo "Exit status $? installing Karpenter"
 fi
-sleep 5
+sleep 2
 
 if ! install_aws_external_dns; then
   echo "Exit status $? installing install_aws_external_dns"
 fi
-sleep 5
+sleep 2
 if ! install_aws_load_balancer_controller; then
   echo "Exit status $? installing install_aws_load_balancer_controller"
 fi
-sleep 5
+sleep 2
 
 if ! install_istio; then
   echo "Exit stat $? installing istio"

@@ -22,6 +22,8 @@ output "oidc" {
   }
 }
 
+output "bucket" { value = module.irsa.bucket }
+
 output "cert" {
   value = module.irsa.cert
 }

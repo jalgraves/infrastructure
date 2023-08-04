@@ -3,6 +3,7 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 resource "aws_s3_bucket" "oidc" {
   bucket = "${var.org}-${var.cluster_name}-oidc"
@@ -90,15 +91,17 @@ resource "aws_s3_object" "oidc_jwks" {
 }
 
 data "tls_certificate" "this" {
-  url = "https://${aws_s3_bucket.oidc.bucket_domain_name}"
+  url = "https://${aws_s3_bucket.oidc.bucket_regional_domain_name}"
 }
 
 locals {
-  cert = data.tls_certificate.this.certificates[index(data.tls_certificate.this.certificates[*].subject, "CN=*.s3.amazonaws.com")]
+  cert = data.tls_certificate.this.certificates[index(data.tls_certificate.this.certificates[*].subject, "CN=*.s3.${data.aws_region.current.id}.amazonaws.com")]
+  #cert = data.tls_certificate.this
 }
 
 resource "aws_iam_openid_connect_provider" "irsa" {
   url             = "https://${aws_s3_bucket.oidc.bucket_domain_name}"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [local.cert.sha1_fingerprint]
+  depends_on      = [data.tls_certificate.this]
 }

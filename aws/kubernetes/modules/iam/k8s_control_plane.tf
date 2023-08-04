@@ -26,7 +26,7 @@ resource "aws_iam_role" "k8s_control_plane" {
 }
 
 resource "aws_iam_instance_profile" "k8s_control_plane" {
-  name = "${title(var.env)}${title(var.region_code)}K8sControlPlanePolicy"
+  name = "${title(var.env)}${title(var.region_code)}K8sControlPlane"
   role = aws_iam_role.k8s_control_plane.name
 }
 

@@ -7,7 +7,7 @@ output "bucket" {
 }
 
 output "cert" {
-  value = local.cert.sha1_fingerprint
+  value = local.cert
 }
 
 output "oidc" {

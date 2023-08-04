@@ -33,7 +33,7 @@ locals {
     region_code                        = local.configs.region_code
     sa_signer_key                      = var.sa_signer_key
     sa_signer_pkcs8_pub                = var.sa_signer_pkcs8_pub
-    service_account_issuer_url         = "https://${module.irsa.oidc.issuer}/"
+    service_account_issuer_url         = "https://${module.irsa.oidc.issuer}"
     upload_cert_to_aws_enabled         = local.configs.k8s.upload_cert_to_aws_enabled
   }
   k8s_control_plane_user_data = templatefile("${path.module}/templates/control_plane_user_data.sh", local.template_vars)
@@ -64,13 +64,12 @@ resource "aws_instance" "k8s_control_plane" {
   key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
   subnet_id                   = data.tfe_outputs.vpc.values.subnets.private.ids[0]
   tags = {
-    "Name" = "${local.configs.cluster_name}-k8s-control-plane"
-    "Role" = "control-plane"
-    #"kubernetes.io/cluster/${local.configs.cluster_name}" = "owned"
+    "Name"                                                = "${local.configs.cluster_name}-k8s-control-plane"
+    "kubernetes.io/cluster/${local.configs.cluster_name}" = "owned"
   }
   metadata_options {
-    http_endpoint          = "enabled"
-    instance_metadata_tags = "enabled"
+    http_endpoint = "enabled"
+    # instance_metadata_tags = "enabled"
   }
   root_block_device {
     encrypted   = false
