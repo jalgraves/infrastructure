@@ -82,11 +82,18 @@ helm repo add cilium https://helm.cilium.io/ && \
   helm repo add jetstack https://charts.jetstack.io &&
   helm repo add aws-ccm https://kubernetes.github.io/cloud-provider-aws && \
   helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver && \
+  helm repo add aws https://aws.github.io/eks-charts
+  helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
   helm repo add bitnami https://charts.bitnami.com/bitnami && \
   helm repo add hcp https://helm.releases.hashicorp.com  && \
   helm repo add beantown https://beantownpub.github.io/helm/ && \
   helm repo update
 
+# OIDC IRSA
+mkdir -p /irsa
+
+echo ${sa_signer_key} | base64 -d > /irsa/sa-signer.key
+echo ${sa_signer_pkcs8_pub} | base64 -d > /irsa/sa-signer-pkcs8.pub
 
 echo "Initializing K8s cluster"
 mkdir -p /home/ec2-user/manifests
@@ -107,25 +114,35 @@ localAPIEndpoint:
   bindPort: ${api_port}
 nodeRegistration:
   kubeletExtraArgs:
-    node-labels: "role=control-plane,control-plane-node=init"
+    node-labels: "role=worker,control-plane-node=init"
   criSocket: "unix:/run/containerd/containerd.sock"
   imagePullPolicy: IfNotPresent
-  taints:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/master
+  taints: []
+  # - effect: NoSchedule
+  #   key: node-role.kubernetes.io/master
 ---
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 apiServer:
-  timeoutForControlPlane: 7m0s
+  timeoutForControlPlane: 5m0s
   certSANs:
   - "${control_plane_endpoint}"
   - "$IP"
   extraArgs:
     cloud-provider: external
+    service-account-key-file: /irsa/sa-signer-pkcs8.pub
+    service-account-signing-key-file: /irsa/sa-signer.key
+    api-audiences: sts.amazonaws.com
+    service-account-issuer: ${service_account_issuer_url}
+  extraVolumes:
+    - name: "irsa"
+      hostPath: "/irsa"
+      mountPath: "/irsa"
+      readOnly: false
+      pathType: DirectoryOrCreate
+
 certificatesDir: /etc/kubernetes/pki
 clusterName: ${cluster_name}
-controlPlaneEndpoint: ${control_plane_endpoint}:${api_port}
 controllerManager: {}
 dns: {}
 etcd:
@@ -149,12 +166,20 @@ authorization:
 serverTLSBootstrap: ${kubelet_tls_bootstrap_enabled}
 EOF
 
+# kubeadm init \
+#   --v=6 \
+#   --config /home/ec2-user/manifests/cluster-config.yaml \
+#   --upload-certs
+
 kubeadm init \
-  --v=6 \
-  --config /home/ec2-user/manifests/cluster-config.yaml \
-  --upload-certs
+  --v=10 \
+  --config /home/ec2-user/manifests/cluster-config.yaml
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
+
+# MASTER_NODE=$(kubectl get nodes -l role=control-plane --no-headers | awk '{print $1}' | head -n 1)
+# echo "Master node: $MASTER_NODE"
+# kubectl taint node "$MASTER_NODE" node-role.kubernetes.io/master:NoSchedule-
 
 # Install the cluster's CNI. This cluster uses Cilium
 # Hubble displays cluster traffic in a UI
@@ -164,17 +189,19 @@ helm upgrade cilium cilium/cilium --install \
   --namespace kube-system --reuse-values \
   --set hubble.relay.enabled=true \
   --set hubble.ui.enabled=true \
-  --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="${cluster_cidr}"
+  --set operator.replicas=1 \
+  --set debug.enabled=true \
+  --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="${cluster_cidr}" \
+
 
 # Install Cilium's CLI tool for troubleshooting
-curl \
-  --silent \
-  -L \
-  --remote-name-all \
-  https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz{,.sha256sum}
-sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
-tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
-rm cilium-linux-amd64.tar.gz
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
+curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/$${CILIUM_CLI_VERSION}/cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
+sha256sum --check cilium-linux-$${CLI_ARCH}.tar.gz.sha256sum
+sudo tar xzvfC cilium-linux-$${CLI_ARCH}.tar.gz /usr/local/bin
+rm cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
 
 # Create credentials for ec2-user
 mkdir -p "$HOME/.kube"
@@ -282,72 +309,59 @@ AUTOMATED_USER_TOKEN=$(kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-s
 echo "Setting up automated user auth config...."
 touch /home/ec2-user/.kube/automated_user
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-credentials ${automated_user} --token="$AUTOMATED_USER_TOKEN"
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cluster_name} --server="https://k8s.${region_code}.${domain_name}:${api_port}"
+kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cluster_name} --server="https://${control_plane_endpoint}:${api_port}"
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-context ${automated_user} --cluster=${cluster_name} --user=${automated_user}
 kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config use-context ${automated_user}
 echo "$AUTOMATED_USER_TOKEN" > /home/ec2-user/automated_user_token.txt
 
-cat <<EOF | tee karpenter-provisioner.yaml
-apiVersion: karpenter.sh/v1alpha5
-kind: Provisioner
-metadata:
-  name: ${env}-provisioner
-spec:
-  limits:
-    resources:
-      cpu: 1k
-  providerRef:
-    name: default
-  requirements:
-  - key: kubernetes.io/arch
-    operator: In
-    values:
-    - amd64
-  - key: kubernetes.io/os
-    operator: In
-    values:
-    - linux
-  - key: karpenter.sh/capacity-type
-    operator: In
-    values:
-    - spot
-  - key: karpenter.k8s.aws/instance-family
-    operator: In
-    values:
-    - t3
-    - t3a
-  - key: topology.kubernetes.io/zone
-    operator: In
-    values:
-    - ${aws_region}
-  - key: karpenter.k8s.aws/instance-size
-    operator: In
-    values:
-    - medium
-    - large
-  ttlSecondsAfterEmpty: 30
-EOF
-
 function install_karpenter() {
   echo "Installing Karpenter"
-  helm upgrade karpenter oci://public.ecr.aws/karpenter \
+  helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
     --install \
     --debug \
     --create-namespace \
     --version ${karpenter_version} \
     --namespace karpenter \
     --set settings.aws.clusterName=${cluster_name} \
-    --set settings.aws.clusterEndpoint="https://${control_plane_endpoint}:6443" \
-    --set settings.aws.defaultInstanceProfil=${karpenter_instance_profile} \
+    --set settings.aws.clusterEndpoint="https://$IP:6443" \
+    --set settings.aws.defaultInstanceProfile=${karpenter_instance_profile} \
+    --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${karpenter_service_account_role_arn}" \
     --set replicas=1
 
-  kubectl apply -f karpenter-provisioner.yaml
+  helm upgrade karpenter-provisioners beantownpub/karpenter-provisioners \
+    --install \
+    --set clusterName=${cluster_name} \
+    --set env=${env}
+}
 
+function install_aws_load_balancer_controller() {
+  helm upgrade aws-load-balancer-controller aws/aws-load-balancer-controller --install \
+    --namespace kube-system \
+    --set clusterName=development-use2 \
+    --set replicaCount=1
+}
+
+function install_aws_external_dns() {
+  helm upgrade aws-external-dns external-dns/external-dns --install \
+    --namespace kube-system \
+    --set logLevel=debug \
+    --set logFormat=json
 }
 
 function install_istio() {
-  helm upgrade --install istio beantown/istio \
-    --namespace istio-system
+  helm upgrade istio beantown/istio --install \
+    --namespace istio-system \
+    --set ingress.albPublic.externalDns.hostnames[0]="*.${cluster_domain}" \
+    --set ingress.albPublic.accessLogs.enabled=false \
+    --set ingress.albPrivate.enabled=false \
+    --set ingress.gatewayDomains[0]="*.${cluster_domain}" \
+    --set certArns[0]=${cert_arn} \
+    --set sslPolicy=ELBSecurityPolicy-TLS13-1-2-2021-06 \
+    --set environment=development \
+    --set gateway.replicaCount=1 \
+    --set regionCode=use2 \
+    --create-namespace \
+    --debug
 }
 
 function upload_cert() {
@@ -358,17 +372,30 @@ function upload_cert() {
     --private-key file://"/etc/kubernetes/pki/apiserver.key"
 }
 
-function attach_cert() {
-  echo "Attaching cert to NLB listener ${listener_arn}"
-  aws elbv2 modify-listener \
-    --region ${aws_region} \
-    --listener-arn ${listener_arn} \
-    --certificates CertificateArn="arn:aws:iam::${aws_account_id}:server-certificate/${cluster_name}"
-}
+# function attach_cert() {
+#   echo "Attaching cert to NLB listener $${listener_arn}"
+#   aws elbv2 modify-listener \
+#     --region ${aws_region} \
+#     --listener-arn $${listener_arn} \
+#     --certificates CertificateArn="arn:aws:iam::${aws_account_id}:server-certificate/${cluster_name}"
+# }
 
 if ! install_karpenter; then
   echo "Exit status $? installing Karpenter"
-  exit 1
+fi
+sleep 5
+
+if ! install_aws_external_dns; then
+  echo "Exit status $? installing install_aws_external_dns"
+fi
+sleep 5
+if ! install_aws_load_balancer_controller; then
+  echo "Exit status $? installing install_aws_load_balancer_controller"
+fi
+sleep 5
+
+if ! install_istio; then
+  echo "Exit stat $? installing istio"
 fi
 
 if [[ ${upload_cert_to_aws_enabled} = "true" ]]; then
@@ -387,98 +414,16 @@ if [[ ${upload_cert_to_aws_enabled} = "true" ]]; then
   fi
 
   sleep 15
-  if ! attach_cert; then
-    echo "Exit status $? attaching cert to listener. Trying again"
-    sleep 15
-    attach_cert
-  fi
-  sleep 10
+  # if ! attach_cert; then
+  #   echo "Exit status $? attaching cert to listener. Trying again"
+  #   sleep 15
+  #   attach_cert
+  # fi
+  # sleep 10
 fi
 
 # Create namespaces
 kubectl create ns "${env}" && \
   kubectl label namespace "${env}" istio-injection=enabled
-
-
-
-kubectl config use-context kubernetes-admin@${cluster_name}
-
-cat <<'EOF' > /opt/delete_nodes.sh
-#!/bin/bash
-printf "\n\n$(date +%Y-%m-%dT%H:%M:%S) - Running delete_nodes.sh" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-
-export KUBECONFIG=/etc/kubernetes/admin.conf
-kubectl config use-context kubernetes-admin@${cluster_name}
-
-function check_kubelet_status() {
-  kubectl get node "$1" -o json | jq '.status.conditions[].message' | grep "Kubelet stopped posting"
-}
-
-function fetch_etcd_member_id() {
-  ETCD_MEMBER_ID=$(\
-  kubectl exec "$1" \
-    -n kube-system \
-    -- \
-    etcdctl \
-      --cacert /etc/kubernetes/pki/etcd/ca.crt \
-      --cert /etc/kubernetes/pki/etcd/peer.crt \
-      --key /etc/kubernetes/pki/etcd/peer.key \
-      member list | grep "$2" | cut -f 1 -d,)
-}
-
-function remove_etcd_members() {
-  kubectl exec "$1" \
-    -n kube-system \
-    -- \
-    etcdctl \
-      --cacert /etc/kubernetes/pki/etcd/ca.crt \
-      --cert /etc/kubernetes/pki/etcd/peer.crt \
-      --key /etc/kubernetes/pki/etcd/peer.key \
-      member remove "$2"
-}
-
-HEALTHY_NODE=$(kubectl get nodes -l role=control-plane --no-headers | grep -v 'NotReady' | awk '{print $1}' | head -n 1)
-printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Healthy Node: $HEALTHY_NODE" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-
-NODES=$(kubectl get nodes -o custom-columns=NAME:metadata.name --no-headers)
-for node in $NODES; do
-  status=$(kubectl get node "$node" -o json | jq '.metadata.labels["status"]')
-  if [[ "$status" != "null" ]]; then
-    printf "\n$(date +%Y-%m-%dT%H:%M:%S) - $node is locked, exiting" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-    continue
-  else
-    printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Locking $node" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-    kubectl label node "$node" status=locked
-  fi
-  failures=0
-  max_failures=5
-  while (("$failures" < "$max_failures")); do
-    if check_kubelet_status "$node"; then
-      failures=$((failures + 1))
-      printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Node $node failures: $failures" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-      sleep 60
-    else
-      printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Unlocking $node | Stable after $failures failures" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-      kubectl label node "$node" status-
-      break
-    fi
-    if [[ $failures -eq $max_failures ]]; then
-      fetch_etcd_member_id "etcd-$HEALTHY_NODE" "$node"
-      if [[ -n "$ETCD_MEMBER_ID" ]]; then
-        printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Removing ETCD member: $ETCD_MEMBER_ID" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-        remove_etcd_members "etcd-$HEALTHY_NODE" "$ETCD_MEMBER_ID"
-      fi
-      printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Draining $node" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-      kubectl drain "$node" --ignore-daemonsets --delete-emptydir-data --force=true --skip-wait-for-delete-timeout=30 --timeout=600s
-      printf "\n$(date +%Y-%m-%dT%H:%M:%S) - Deleting $node" >> /var/log/${cluster_name}-crons/delete_nodes.txt
-      kubectl delete node "$node"
-    fi
-  done
-done
-printf "\n"
-EOF
-
-chmod +x /opt/delete_nodes.sh
-echo '*/5 * * * * /bin/bash /opt/delete_nodes.sh' >> /var/spool/cron/root
 
 echo "Cluster init complete"

@@ -15,7 +15,7 @@ resource "aws_subnet" "public" {
   tags = {
     "Name"                                                                    = "${local.configs.env}-${local.configs.region_code}-public-${count.index}"
     "kubernetes.io/cluster/${local.configs.env}-${local.configs.region_code}" = "owned"
-    "kubernetes.io/role/internal-elb"                                         = "1"
+    "kubernetes.io/role/elb"                                                  = "1"
   }
   lifecycle {
     # Ignore tags added by kops or kubernetes

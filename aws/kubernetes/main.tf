@@ -1,5 +1,3 @@
-
-
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
@@ -14,6 +12,14 @@ locals {
   configs = module.configs.values
 }
 
+module "irsa" {
+  source = "./modules/irsa"
+
+  cluster_name = local.configs.cluster_name
+  oidc_jwks    = var.oidc_jwks
+  org          = local.configs.org
+}
+
 module "iam" {
   source = "./modules/iam"
 
@@ -21,4 +27,8 @@ module "iam" {
   env          = local.configs.env
   region       = local.configs.region
   region_code  = local.configs.region_code
+  oidc = {
+    issuer       = module.irsa.oidc.issuer
+    provider_arn = module.irsa.oidc.provider.arn
+  }
 }

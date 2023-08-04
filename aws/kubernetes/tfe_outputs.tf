@@ -12,3 +12,8 @@ data "tfe_outputs" "vpc" {
   organization = "jalgraves"
   workspace    = "${local.configs.env}-aws-vpc-${local.configs.region_code}"
 }
+
+data "tfe_outputs" "route53" {
+  organization = "jalgraves"
+  workspace    = "${local.configs.env}-aws-route53-${local.configs.region_code}"
+}

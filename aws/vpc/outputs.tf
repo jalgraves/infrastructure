@@ -38,5 +38,8 @@ output "tailscale" {
       id   = aws_key_pair.tailscale[0].id
       name = aws_key_pair.tailscale[0].key_name
     }
+    security_group = {
+      id = aws_security_group.tailscale[0].id
+    }
   }
 }
