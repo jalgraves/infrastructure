@@ -101,6 +101,7 @@ resource "aws_iam_policy" "k8s_control_plane" {
           "elasticloadbalancing:SetWebACL",
           "iam:CreateServiceLinkedRole",
           "iam:DeleteServerCertificate",
+          "iam:UploadServerCertificate",
           "kms:DescribeKey",
           "pricing:GetProducts",
           "route53:ChangeResourceRecordSets",

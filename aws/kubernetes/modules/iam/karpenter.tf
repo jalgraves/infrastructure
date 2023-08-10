@@ -75,6 +75,9 @@ resource "aws_iam_policy" "karpenter" {
   path        = "/"
   description = "Karpenter permissions to handle node termination events via the Node Termination Handler. Created via Terraform TFC workspace ${terraform.workspace}"
   policy      = data.aws_iam_policy_document.karpenter.json
+  tags = {
+    "Name" = "${title(var.env)}${title(var.region_code)}K8sKarpenterPolicy"
+  }
 }
 
 data "aws_iam_policy_document" "karpenter_assume_role" {
@@ -116,11 +119,17 @@ resource "aws_iam_role" "karpenter" {
   description        = "Role for K8s nodes created by karpenter auto scaling. Created via Terraform TFC workspace ${terraform.workspace}"
   name               = "${title(var.env)}${title(var.region_code)}K8sKarpenter"
   assume_role_policy = data.aws_iam_policy_document.karpenter_assume_role.json
+  tags = {
+    "Name" = "${title(var.env)}${title(var.region_code)}K8sKarpenter"
+  }
 }
 
 resource "aws_iam_instance_profile" "karpenter" {
   name = "${title(var.env)}${title(var.region_code)}K8sKarpenter"
   role = aws_iam_role.karpenter.name
+  tags = {
+    "Name" = "${title(var.env)}${title(var.region_code)}K8sKarpenter"
+  }
 }
 
 

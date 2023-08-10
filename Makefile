@@ -79,3 +79,7 @@ tf/update:
 ## Format terraform code
 fmt:
 	terraform fmt --recursive
+
+foo/bar:
+	echo $@
+	echo $*

@@ -4,7 +4,7 @@
 
 variable "aws_account_id" {}
 variable "branch" { default = "master" }
-variable "domain_name" {}
+variable "domain_name" { default = null }
 variable "oauth_token_id" {}
 variable "organization" {}
 variable "slack_webhook_url" {}

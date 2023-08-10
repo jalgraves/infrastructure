@@ -21,6 +21,7 @@ locals {
       netmask_length                              = 16
     }
     ipv6 = {
+      assign_ipv6_address_on_creation                = false
       destination_cidr_block                         = "64:ff9b::/96"
       enable_resource_name_dns_aaaa_record_on_launch = false
     }

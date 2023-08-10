@@ -56,10 +56,10 @@ resource "aws_s3_bucket_policy" "oidc" {
 }
 
 resource "aws_s3_object" "oidc_discovery" {
-  bucket     = aws_s3_bucket.oidc.id
-  key        = "/.well-known/openid-configuration"
-  acl        = "public-read"
-  content    = <<EOF
+  bucket  = aws_s3_bucket.oidc.id
+  key     = "/.well-known/openid-configuration"
+  acl     = "public-read"
+  content = <<EOF
 {
   "issuer": "https://${aws_s3_bucket.oidc.bucket_domain_name}/",
   "jwks_uri": "https://${aws_s3_bucket.oidc.bucket_domain_name}/jwks.json",
@@ -79,15 +79,23 @@ resource "aws_s3_object" "oidc_discovery" {
   ]
 }
 EOF
-  depends_on = [aws_s3_bucket_policy.oidc]
+  depends_on = [
+    aws_s3_bucket_acl.oidc,
+    aws_s3_bucket_public_access_block.oidc,
+    aws_s3_bucket_policy.oidc
+  ]
 }
 
 resource "aws_s3_object" "oidc_jwks" {
-  bucket     = aws_s3_bucket.oidc.id
-  key        = "/jwks.json"
-  acl        = "public-read"
-  content    = base64decode(var.oidc_jwks)
-  depends_on = [aws_s3_bucket_policy.oidc]
+  bucket  = aws_s3_bucket.oidc.id
+  key     = "/jwks.json"
+  acl     = "public-read"
+  content = base64decode(var.oidc_jwks)
+  depends_on = [
+    aws_s3_bucket_acl.oidc,
+    aws_s3_bucket_public_access_block.oidc,
+    aws_s3_bucket_policy.oidc
+  ]
 }
 
 data "tls_certificate" "this" {
@@ -96,7 +104,6 @@ data "tls_certificate" "this" {
 
 locals {
   cert = data.tls_certificate.this.certificates[index(data.tls_certificate.this.certificates[*].subject, "CN=*.s3.${data.aws_region.current.id}.amazonaws.com")]
-  #cert = data.tls_certificate.this
 }
 
 resource "aws_iam_openid_connect_provider" "irsa" {

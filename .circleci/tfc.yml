@@ -1,0 +1,234 @@
+version: 2.1
+
+executors:
+  terraform:
+    docker:
+      - image: docker.mirror.hashicorp.services/hashicorp/terraform:1.5.3
+
+commands:
+  terraform_creds:
+    description: Create Terraform credentials
+    steps:
+      - run:
+          name: Create Terraform tfc.tfvars file
+          command: |
+            echo credentials "app.terraform.io" { token = \"$TFC_TOKEN\" } > $HOME/.terraformrc
+            mkdir -p $HOME/tfvars
+            echo "vault_address   = \"${VAULT_ADDR}\"" > $HOME/tfvars/tfc.tfvars
+            echo "tfc_token   = \"${TFC_TOKEN}\"" >> $HOME/tfvars/tfc.tfvars
+
+  terraform_dependencies:
+    description: Install Terraform dependencies
+    steps:
+      - run:
+          name: Install dependencies
+          command: apk add bash curl git
+
+  check_diff:
+    description: Check if the workspace source code has changed
+    parameters:
+      directory:
+        type: string
+    steps:
+      - run:
+          name: Check source code diff
+          command: |
+            function checkDiff {
+              if [ ${CIRCLE_BRANCH} = "master" ]; then
+                git diff --name-only HEAD HEAD^1 | grep 'tfc/<< parameters.directory >>/'
+              else
+                git diff --name-only ${CIRCLE_SHA1} master | grep 'tfc/<< parameters.directory >>/'
+              fi
+            }
+            if checkDiff; then
+              echo "Continuing"
+              exit 0
+            else
+              echo "Stopping step"
+              circleci-agent step halt
+            fi
+
+jobs:
+
+  validate:
+    executor: terraform
+    parameters:
+      directory:
+        type: string
+      workspace:
+        type: string
+    steps:
+      - checkout
+      - terraform_creds
+      - restore_cache:
+          name: Restoring Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - run:
+          name: Terraform TFC workspace validate
+          command: |
+            cd tfc/<< parameters.directory >>
+            export TF_WORKSPACE=<< parameters.workspace >>
+            terraform validate
+      - save_cache:
+          name: Saving Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+          paths:
+            - tfc/<< parameters.directory >>/.terraform
+          no_output_timeout: 20m
+
+  init:
+    executor: terraform
+    parameters:
+      directory:
+        type: string
+      workspace:
+        type: string
+    steps:
+      - checkout
+      - terraform_creds
+      - run:
+          name: Terraform Plan << parameters.workspace >>
+          command: |
+            cd tfc/<< parameters.directory >>
+            export TF_WORKSPACE=<< parameters.workspace >>
+            terraform init
+          no_output_timeout: 30m
+      - save_cache:
+          name: Saving Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+          paths:
+            - tfc/<< parameters.directory >>/.terraform
+
+  plan:
+    executor: terraform
+    parameters:
+      directory:
+        type: string
+      workspace:
+        type: string
+    steps:
+      - checkout
+      - check_diff:
+          directory: << parameters.directory >>
+      - terraform_creds
+      - restore_cache:
+          name: Restoring Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - run:
+          name: Terraform Plan << parameters.workspace >>
+          command: |
+            cd tfc/<< parameters.directory >>
+            export TF_WORKSPACE=<< parameters.workspace >>
+            unset VAULT_SECRET_ID
+            unset VAULT_ROLE_ID
+            unset VAULT_NAMESPACE
+            terraform plan -out .terraform/terraform.tfplan -var-file=$HOME/tfvars/tfc.tfvars
+          no_output_timeout: 30m
+      - save_cache:
+          name: Saving Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+          paths:
+            - tfc/<< parameters.directory >>/.terraform
+            - tfc/<< parameters.directory >>/.terraform.lock.hcl
+
+  apply:
+    executor: terraform
+    parameters:
+      directory:
+        type: string
+      workspace:
+        type: string
+    steps:
+      - checkout
+      - check_diff:
+          directory: << parameters.directory >>
+      - terraform_creds
+      - terraform_dependencies
+      - restore_cache:
+          name: Restoring Cache [terraform plan]
+          key: tfplan-<< parameters.workspace >>-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - run:
+          name: Terraform Apply << parameters.workspace >>
+          command: |
+            cd tfc/<< parameters.directory >>
+            export TF_WORKSPACE=<< parameters.workspace >>
+            unset VAULT_SECRET_ID
+            unset VAULT_ROLE_ID
+            unset VAULT_NAMESPACE
+            terraform apply -auto-approve -var-file=$HOME/tfvars/tfc.tfvars
+          no_output_timeout: 25m
+
+workflows:
+  version: 2
+  tfc: # Terraform Cloud
+    jobs:
+      - init:
+          name: init << matrix.workspace >>
+          matrix:
+            parameters:
+              workspace: [
+                development-aws-kubernetes-tfc,
+                development-aws-vpc-tfc,
+                development-aws-route53-tfc,
+                production-aws-kubernetes-tfc,
+                production-aws-rds-tfc,
+                production-aws-vpc-tfc,
+                production-aws-route53-tfc
+              ]
+              directory: [aws]
+
+
+
+      - validate:
+          name: validate << matrix.workspace >>
+          matrix:
+            parameters:
+              workspace: [
+                development-aws-kubernetes-tfc,
+                development-aws-vpc-tfc,
+                development-aws-route53-tfc,
+                production-aws-kubernetes-tfc,
+                production-aws-vpc-tfc,
+                production-aws-route53-tfc
+              ]
+              directory: [aws]
+          requires:
+            - init << matrix.workspace >>
+
+      - plan:
+          name: plan << matrix.workspace >>
+          matrix:
+            parameters:
+              workspace: [
+                development-aws-kubernetes-tfc,
+                development-aws-vpc-tfc,
+                development-aws-route53-tfc,
+                production-aws-kubernetes-tfc,
+                production-aws-vpc-tfc,
+                production-aws-route53-tfc
+              ]
+              directory: [aws]
+            alias: plan aws
+          requires:
+            - validate << matrix.workspace >>
+
+      - apply:
+          name: apply << matrix.workspace >>
+          matrix:
+            parameters:
+              workspace: [
+                development-aws-kubernetes-tfc,
+                development-aws-vpc-tfc,
+                development-aws-route53-tfc,
+                production-aws-kubernetes-tfc,
+                production-aws-route53-tfc,
+                production-aws-vpc-tfc
+              ]
+              directory: [aws]
+            alias: apply aws
+          requires:
+            - plan aws
+          filters:
+            branches:
+              only:
+                - master

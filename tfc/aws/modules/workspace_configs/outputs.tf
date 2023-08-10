@@ -39,9 +39,8 @@ locals {
       trigger_patterns = [
         "aws/kubernetes/*.tf",
         "aws/kubernetes/modules/workspace_configs/development-aws-kubernetes-*.tf",
-        "aws/kubernetes/modules/rbac/*.tf",
-        "aws/kubernetes/modules/helm/*.tf",
-        "aws/kubernetes/lambda_functions/*.tpl"
+        "aws/kubernetes/modules/iam/*.tf",
+        "aws/kubernetes/modules/irsa/*.tf"
       ]
       use_tfc             = true
       global_remote_state = true
@@ -98,7 +97,6 @@ locals {
       speculative_enabled   = true
       trigger_patterns      = ["aws/ecr/*.tf", "aws/ecr/modules/workspace_configs/production-aws-ecr-*.tf", "aws/ecr/modules/workspace_configs/outputs.tf"]
       use_tfc               = false
-      use_vault             = false
       global_remote_state   = true
     }
     production-aws-kubernetes-tfc = {
@@ -107,21 +105,19 @@ locals {
       branch                = "master"
       directory             = "kubernetes"
       env                   = "production"
-      execution_mode        = "remote"
+      execution_mode        = "local"
       file_triggers_enabled = true
-      organization          = "jalgraves"
+      organization          = "beantownpub"
       queue_all_runs        = true
-      region_codes          = ["use1"]
+      region_codes          = ["use1", "use2"]
       speculative_enabled   = true
       trigger_patterns = [
         "aws/kubernetes/*.tf",
         "aws/kubernetes/modules/workspace_configs/production-aws-kubernetes-*.tf",
-        "aws/kubernetes/modules/rbac/*.tf",
-        "aws/kubernetes/modules/helm/*.tf",
-        "aws/kubernetes/lambda_functions/*.tpl"
+        "aws/kubernetes/modules/iam/*.tf",
+        "aws/kubernetes/modules/irsa/*.tf"
       ]
-      use_tfc = true
-
+      use_tfc             = true
       global_remote_state = true
     }
 
@@ -131,15 +127,14 @@ locals {
       branch                = "master"
       directory             = "vpc"
       env                   = "production"
-      execution_mode        = "remote"
+      execution_mode        = "local"
       file_triggers_enabled = true
-      organization          = "jalgraves"
+      organization          = "beantownpub"
       queue_all_runs        = true
-      region_codes          = ["use1"]
+      region_codes          = ["use1", "use2"]
       speculative_enabled   = true
       trigger_patterns      = ["aws/vpc/*.tf", "aws/vpc/modules/workspace_configs/production-aws-vpc-*.tf"]
       use_tfc               = true
-      use_vault             = true
       global_remote_state   = true
     }
 
@@ -149,15 +144,14 @@ locals {
       branch                = "master"
       directory             = "route53"
       env                   = "production"
-      execution_mode        = "remote"
+      execution_mode        = "local"
       file_triggers_enabled = true
-      organization          = "jalgraves"
+      organization          = "beantownpub"
       queue_all_runs        = true
-      region_codes          = ["euc1"]
+      region_codes          = ["use1", "use2"]
       speculative_enabled   = true
       trigger_patterns      = ["aws/route53/*.tf"]
-      use_tfc               = false
-      use_vault             = false
+      use_tfc               = true
       global_remote_state   = true
     }
   }

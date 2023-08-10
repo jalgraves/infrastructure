@@ -1,7 +1,9 @@
 #!/bin/bash
 
+export KUBECONFIG=/etc/kubernetes/admin.conf && export PATH=$PATH:/usr/local/bin && \
 alias k='kubectl' && \
   alias kdelp='kubectl delete pod' && \
+  alias kd='kubectl describe' && \
   alias kg='kubectl get' && \
   alias kgp='kubectl get pods' && \
   alias kgpa='kubectl get pods -A' && \
@@ -25,4 +27,17 @@ alias k='kubectl' && \
   alias sctl='systemctl' && \
   alias sctls='systemctl status' && \
   alias kgpro='kubectl get provisioners' && \
-  alias kgsak='kubectl get serviceaccount -n karpenter'
+  alias kgsak='kubectl get serviceaccount -n karpenter' && \
+  alias kca='kubectl certificate approve' && \
+  alias kgpi='kubectl get pod -n istio-system' && \
+  alias kgii='kubectl get ingress -n istio-system' && \
+  alias kdelpi='kubectl delete pod -n istio-system' && \
+  alias kdi='kubectl describe ingress -n istio-system' && \
+  alias kggwi='kubectl get gateway -n istio-system' && \
+  alias kdgwi='kubectl describe gateway -n istio-system' && \
+  alias kegwi='kubectl edit gateway -n istio-system' && \
+  alias kdpi='kubectl describe pod -n istio-system' && \
+  alias klargo='kubectl logs -n argocd' && \
+  alias kdelpargo='kubectl delete pod -n argocd' && \
+  alias kdpargo='kubectl describe pod -n argocd' && \
+  alias kgpargo='kubectl get pods -n argocd'

@@ -3,13 +3,13 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  bucket_name  = "jalgraves-${local.configs.env}-${local.configs.region_code}-static-assets-cdn"
-  s3_origin_id = "${title(local.configs.env)}${title(local.configs.region_code)}Jalgraves"
+  bucket_name  = "${var.org}-${local.configs.env}-${local.configs.region_code}-static-assets-cdn"
+  s3_origin_id = "${title(local.configs.env)}${title(local.configs.region_code)}${title(var.org)}"
 }
 
 resource "aws_cloudfront_origin_access_identity" "this" {
   count   = local.configs.cdn.enabled ? 1 : 0
-  comment = "${local.configs.env}-${local.configs.region_code} static assets CloudFront CDN"
+  comment = "${var.org} ${local.configs.env}-${local.configs.region_code} static assets CloudFront CDN"
 }
 
 resource "aws_s3_bucket" "this" {
@@ -95,7 +95,7 @@ resource "aws_cloudfront_distribution" "this" {
 
 data "aws_route53_zone" "cdn" {
   count = local.configs.cdn.enabled ? 1 : 0
-  name  = "${local.configs.env}-${local.configs.region_code}.jalgraves.com"
+  name  = "${local.configs.env}.${local.configs.region_code}.aws.${var.org}.com"
 }
 
 
@@ -104,7 +104,7 @@ resource "aws_route53_record" "a" {
     for k, v in toset(local.configs.cdn.aliases) : k => v
     if local.configs.cdn.enabled
   }
-  name    = "jalgraves"
+  name    = "cdn"
   type    = "A"
   zone_id = data.aws_route53_zone.cdn[0].zone_id
 
@@ -120,7 +120,7 @@ resource "aws_route53_record" "aaaa" {
     for k, v in toset(local.configs.cdn.aliases) : k => v
     if local.configs.cdn.enabled
   }
-  name    = "jalgraves"
+  name    = "cdn"
   type    = "AAAA"
   zone_id = data.aws_route53_zone.cdn[0].zone_id
 

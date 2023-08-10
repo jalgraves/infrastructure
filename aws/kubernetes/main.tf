@@ -17,8 +17,7 @@ module "irsa" {
 
   cluster_name = local.configs.cluster_name
   oidc_jwks    = var.oidc_jwks
-  org          = local.configs.org
-  #sha1_fingerprint = var.sha1_fingerprint
+  org          = var.org
 }
 
 module "iam" {

@@ -1,9 +1,9 @@
-# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
-# |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
-# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
+# +-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+ +-+-+-+-+
+# |*|*|*|*| |H|Q|O| |D|E|V|O|P|S| |*|*|*|*|
+# +-+-+-+-+ +-+-+-+ +-+-+ +-+-+-+ +-+-+-+-+
 
 locals {
-  development-aws-vpc-use2 = {
+  production-aws-vpc-use2 = {
     assign_generated_ipv6_cidr_block = true
     # Two subnets (one public, one private) will be created for each AZ passed in
     availability_zones = ["us-east-2a", "us-east-2b"]
@@ -14,9 +14,9 @@ locals {
     enable_dns_hostnames = true
     enable_dns_support   = true
     instance_tenancy     = "default"
-    env                  = "development"
+    env                  = "production"
     ipv4 = {
-      cidr_block                                  = "10.8.0.0/16"
+      cidr_block                                  = "10.6.0.0/16"
       destination_cidr_block                      = "0.0.0.0/0"
       enable_resource_name_dns_a_record_on_launch = false
       netmask_length                              = 16

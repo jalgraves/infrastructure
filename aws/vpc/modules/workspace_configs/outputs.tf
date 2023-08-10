@@ -8,7 +8,7 @@ locals {
   workspaces = {
     development-aws-vpc-use1 = local.development-aws-vpc-use1
     development-aws-vpc-use2 = local.development-aws-vpc-use2
-    production-aws-vpc-use1  = local.production-aws-vpc-use1
+    production-aws-vpc-use2  = local.production-aws-vpc-use2
   }
 }
 

@@ -3,16 +3,16 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  development-aws-kubernetes-use2 = {
+  production-aws-kubernetes-use2 = {
     cilium = {
       version = "1.13.0"
       cidr    = "10.96.0.0/12"
     }
-    cluster_name = "development-use2"
+    cluster_name = "production-use2"
     ec2 = {
       instance_type = "t3.medium"
     }
-    env = "development"
+    env = "production"
     k8s = {
       anonymous_auth_enabled               = false
       aws_ccm_enabled                      = true

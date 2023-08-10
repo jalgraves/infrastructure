@@ -25,7 +25,6 @@ locals {
 }
 
 resource "aws_key_pair" "tailscale" {
-  count      = local.configs.tailscale.enabled ? 1 : 0
   key_name   = "${local.configs.env}-${local.configs.region_code}-tailscale-key-pair"
   public_key = var.tailscale_public_ssh_key
 }
@@ -36,7 +35,7 @@ resource "aws_instance" "tailscale_subnet_router" {
   associate_public_ip_address = true
   ebs_optimized               = true
   instance_type               = local.configs.tailscale.instance_type
-  key_name                    = aws_key_pair.tailscale[0].key_name
+  key_name                    = aws_key_pair.tailscale.key_name
   vpc_security_group_ids = [
     aws_security_group.tailscale[0].id
   ]

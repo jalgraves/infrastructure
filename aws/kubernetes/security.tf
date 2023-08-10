@@ -30,3 +30,20 @@ resource "aws_security_group" "internal_traffic" {
     "karpenter.sh/discovery/${local.configs.cluster_name}" = local.configs.cluster_name
   }
 }
+
+resource "aws_security_group" "k8s_control_plane" {
+  name        = "${local.configs.cluster_name}-k8s-control-plane"
+  description = "Allow traffic to K8s API. Created via Terraform workspace ${terraform.workspace}"
+  vpc_id      = data.tfe_outputs.vpc.values.vpc.id
+  ingress {
+    description = "Allow traffic to K8s API. Created via Terraform workspace ${terraform.workspace}"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name                                           = "${local.configs.cluster_name}-k8s-control-plane"
+    "k8s.io/cluster/${local.configs.cluster_name}" = "owned"
+  }
+}

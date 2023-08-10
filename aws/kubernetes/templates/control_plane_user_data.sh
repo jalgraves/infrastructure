@@ -115,12 +115,10 @@ localAPIEndpoint:
   bindPort: ${api_port}
 nodeRegistration:
   kubeletExtraArgs:
-    node-labels: "role=worker,control-plane-node=init"
+    node-labels: "control-plane-node=init"
   criSocket: "unix:/run/containerd/containerd.sock"
   imagePullPolicy: IfNotPresent
   taints: []
-  # - effect: NoSchedule
-  #   key: node-role.kubernetes.io/master
 ---
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
@@ -141,10 +139,13 @@ apiServer:
       mountPath: "/irsa"
       readOnly: false
       pathType: DirectoryOrCreate
-
+controlPlaneEndpoint: "${control_plane_endpoint}:${api_port}"
 certificatesDir: /etc/kubernetes/pki
 clusterName: ${cluster_name}
-controllerManager: {}
+controllerManager:
+  extraArgs:
+    cluster-signing-cert-file: /etc/kubernetes/pki/ca.crt
+    cluster-signing-key-file: /etc/kubernetes/pki/ca.key
 dns: {}
 etcd:
   local:
@@ -192,7 +193,7 @@ helm upgrade cilium cilium/cilium --install \
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
 CLI_ARCH=amd64
 if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
-curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/$${CILIUM_CLI_VERSION}/cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
+curl -s -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/$${CILIUM_CLI_VERSION}/cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
 sha256sum --check cilium-linux-$${CLI_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC cilium-linux-$${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-$${CLI_ARCH}.tar.gz{,.sha256sum}
@@ -204,101 +205,55 @@ cp -i /etc/kubernetes/admin.conf "$HOME/.kube"/config
 cp -i /etc/kubernetes/admin.conf /home/ec2-user/.kube/config
 chown 1000:1000 /home/ec2-user/.kube/config
 
-# Create credentials for automated user
-kubectl create -n kube-system sa ${automated_user}
-kubectl create -n kube-system token ${automated_user}
-
-kubectl apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: ${automated_user}-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: ${automated_user}
-  namespace: kube-system
-EOF
-
-cat <<EOF | tee secret.yaml
-apiVersion: v1
-kind: Secret
-type: kubernetes.io/service-account-token
-metadata:
-  name: ${automated_user}
-  namespace: kube-system
-  annotations:
-    kubernetes.io/service-account.name: "${automated_user}"
-EOF
-
-kubectl apply -n kube-system -f secret.yaml
-AUTOMATED_USER_TOKEN=$(kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-system get secret ${automated_user} -o jsonpath='{.data.token}'| base64 --decode || true)
-
-# Setup automated user auth config
-echo "Setting up automated user auth config...."
-touch /home/ec2-user/.kube/automated_user
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-credentials ${automated_user} --token="$AUTOMATED_USER_TOKEN"
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-cluster ${cluster_name} --server="https://${control_plane_endpoint}:${api_port}"
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config set-context ${automated_user} --cluster=${cluster_name} --user=${automated_user}
-kubectl --kubeconfig=/home/ec2-user/.kube/automated_user config use-context ${automated_user}
-echo "$AUTOMATED_USER_TOKEN" > /home/ec2-user/automated_user_token.txt
-
-function install_ccm() {
-  helm upgrade aws-ccm aws-ccm/aws-cloud-controller-manager \
-    --install \
-    --set args="{\
-        --enable-leader-migration=true,\
-        --cloud-provider=aws,\
-        --v=2,\
-        --cluster-cidr=${cluster_cidr},\
-        --cluster-name=${cluster_name},\
-        --external-cloud-volume-plugin=aws,\
-        --configure-cloud-routes=false\
-      }"
-}
-
 function install_cert_manager() {
   helm upgrade cert-manager jetstack/cert-manager \
     --install \
     --namespace cert-manager \
     --create-namespace \
     --version v1.12.0 \
-    --set prometheus.enabled=false
+    --set prometheus.enabled=false \
+    --set installCRDs=true
+}
+
+CA_CERT_HASH=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* /sha256:/')
+
+function install_karpenter() {
+  helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
+    --install \
+    --create-namespace \
+    --version ${karpenter_version} \
+    --namespace karpenter \
+    --set settings.aws.clusterName=${cluster_name} \
+    --set settings.aws.clusterEndpoint="https://$IP:${api_port}" \
+    --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${karpenter_service_account_role_arn}" \
+    --set replicas=${karpenter_replicas}
+
+  sleep 30
+  helm upgrade karpenter-provisioners beantown/karpenter-provisioners \
+    --install \
+    --set clusterName=${cluster_name} \
+    --set aws.instanceProfile=${karpenter_instance_profile} \
+    --set env=${env} \
+    --set consolidation.enabled=false \
+    --set aws.availabilityZones="{${availability_zones}}" \
+    --set aws.sshPublicKey="${ssh_public_key}" \
+    --set apiAddress="$IP" \
+    --set apiPort="${api_port}" \
+    --set caCertHash="$CA_CERT_HASH" \
+    --set joinToken="$KUBEADM_TOKEN" \
+    --set controlPlaneEndpoint="${control_plane_endpoint}"
 }
 
 function install_pod_identity_webhook() {
   helm upgrade pod-identity-webhook beantown/pod-identity-webhook \
     --install \
-    --debug
-}
-
-function install_karpenter() {
-  echo "Installing Karpenter"
-  helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
-    --install \
-    --debug \
-    --create-namespace \
-    --version ${karpenter_version} \
-    --namespace karpenter \
-    --set settings.aws.clusterName=${cluster_name} \
-    --set settings.aws.clusterEndpoint="https://$IP:6443" \
-    --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${karpenter_service_account_role_arn}" \
-    --set replicas=1
-
-  helm upgrade karpenter-provisioners beantown/karpenter-provisioners \
-    --install \
-    --set clusterName=${cluster_name} \
-    --set aws.instanceProfile=${karpenter_instance_profile} \
-    --set env=${env}
+    --namespace kube-system
 }
 
 function install_aws_load_balancer_controller() {
   helm upgrade aws-load-balancer-controller aws/aws-load-balancer-controller --install \
     --namespace kube-system \
-    --set clusterName=development-use2 \
+    --set clusterName=${cluster_name} \
     --set replicaCount=1
 }
 
@@ -310,96 +265,115 @@ function install_aws_external_dns() {
 }
 
 function install_istio() {
+  echo "${cert_arns}"
   helm upgrade istio beantown/istio --install \
     --namespace istio-system \
     --set ingress.albPublic.externalDns.hostnames[0]="*.${cluster_domain}" \
     --set ingress.albPublic.accessLogs.enabled=false \
     --set ingress.albPrivate.enabled=false \
-    --set ingress.gatewayDomains[0]="*.${cluster_domain}" \
-    --set certArns[0]=${cert_arn} \
+    --set ingress.gatewayDomains="{${gateway_domains}}" \
+    --set certArns=${cert_arns} \
     --set sslPolicy=ELBSecurityPolicy-TLS13-1-2-2021-06 \
-    --set environment=development \
+    --set environment=${env} \
     --set gateway.replicaCount=1 \
-    --set regionCode=use2 \
-    --create-namespace \
-    --debug
+    --set gateway.nodeSelector.role=worker \
+    --set istiod.pilot.nodeSelector.role=worker \
+    --set regionCode=${region_code} \
+    --set org=${org} \
+    --create-namespace
 }
 
+function install_argocd() {
+  helm upgrade argo-cd beantown/argo-cd --install \
+    --namespace argocd \
+    --create-namespace
+}
+
+if [[ ${ebs_csi_driver_enabled} = "true" ]]; then
+  helm upgrade --install aws-ebs-csi-driver \
+    --namespace kube-system \
+    --set node.tolerateAllTaints=true \
+    --set controller.replicaCount=1 \
+    aws-ebs-csi-driver/aws-ebs-csi-driver
+fi
+
+if [[ ${metrics_server_enabled} = "true" ]]; then
+  helm upgrade metrics-server bitnami/metrics-server \
+    --namespace kube-system  \
+    --set apiService.create=true \
+    --install
+fi
+
+mkdir -p /var/log/${cluster_name}-crons
+
+cat <<'EOF' > /opt/approve_certs.sh
+#!/bin/bash
+echo "Running $(date)" >> /var/log/${cluster_name}-crons/approve_certs.txt
+export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl config use-context kubernetes-admin@${cluster_name}
+CSRS=$(kubectl get csr -o custom-columns=NAME:metadata.name --no-headers)
+for csr in $CSRS; do
+  status=$(kubectl get csr "$csr" -o json | jq .status.condition)
+  if [[ "$status" = "null" ]]; then
+    echo "Approving $csr" >> /opt/approve_certs_cron_debug.txt
+    kubectl certificate approve "$csr"
+  fi
+done
+EOF
+
+chmod +x /opt/approve_certs.sh
+echo '*/1 * * * * /bin/bash /opt/approve_certs.sh' >> /var/spool/cron/root
+
+if [[ ${cert_manager_enabled} = "true" ]]; then
+  install_cert_manager
+fi
+sleep 10
+
+if [[ ${pod_identity_webhook_enabled} = "true" ]]; then
+  install_pod_identity_webhook
+fi
+sleep 10
+
+if [[ ${karpenter_enabled} = "true" ]]; then
+  install_karpenter
+fi
+sleep 2
+
+if [[ ${external_dns_enabled} = "true" ]]; then
+  install_aws_external_dns
+fi
+sleep 2
+
+if [[ ${aws_load_balancer_controller_enabled} = "true" ]]; then
+  install_aws_load_balancer_controller
+fi
+sleep 15
+
+if [[ ${istio_enabled} = "true" ]]; then
+  install_istio
+fi
+
+curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+./aws/install
+
+# restart stuck gateway pod with image pull error after istio install (no idea why this happens)
+ISTIO_GATEWAY_POD=$(kubectl get pods -n istio-system -l app=istio -o jsonpath='{.items[0].metadata.name}')
+kubectl delete pods -n istio-system "$ISTIO_GATEWAY_POD"
+
 function upload_cert() {
-  echo "Uploading new apiserver cert to AWS"
+  cert_name="${cluster_name}-$(date +%h-%d-%Y-%H%M)"
   aws iam upload-server-certificate \
-    --server-certificate-name ${cluster_name} \
+    --region ${aws_region} \
+    --server-certificate-name "$cert_name" \
     --certificate-body file://"/etc/kubernetes/pki/apiserver.crt" \
     --private-key file://"/etc/kubernetes/pki/apiserver.key"
 }
 
-# function attach_cert() {
-#   echo "Attaching cert to NLB listener $${listener_arn}"
-#   aws elbv2 modify-listener \
-#     --region ${aws_region} \
-#     --listener-arn $${listener_arn} \
-#     --certificates CertificateArn="arn:aws:iam::${aws_account_id}:server-certificate/${cluster_name}"
-# }
-
-if ! install_cert_manager; then
-  echo "Exit status $? installing cert manager"
-fi
-sleep 5
-
-if ! install_pod_identity_webhook; then
-  echo "Exit status $? installing pod identity webhook"
-fi
-sleep 2
-
-if ! install_ccm; then
-  echo "Exit status $? installing CCM"
-fi
-sleep 2
-
-if ! install_karpenter; then
-  echo "Exit status $? installing Karpenter"
-fi
-sleep 2
-
-if ! install_aws_external_dns; then
-  echo "Exit status $? installing install_aws_external_dns"
-fi
-sleep 2
-if ! install_aws_load_balancer_controller; then
-  echo "Exit status $? installing install_aws_load_balancer_controller"
-fi
-sleep 2
-
-if ! install_istio; then
-  echo "Exit stat $? installing istio"
-fi
-
-if [[ ${upload_cert_to_aws_enabled} = "true" ]]; then
-  # Upload apiserver certificate to AWS
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-  unzip -q awscliv2.zip
-  ./aws/install
-
-  echo "Deleting old apiserver cert from AWS"
-  aws iam delete-server-certificate --server-certificate-name ${cluster_name} || echo "Error deleting cert"
-  sleep 5
-  if ! upload_cert; then
-    echo "Exit status $? uploading cert. Trying again"
-    sleep 15
-    upload_cert
-  fi
-
-  sleep 15
-  # if ! attach_cert; then
-  #   echo "Exit status $? attaching cert to listener. Trying again"
-  #   sleep 15
-  #   attach_cert
-  # fi
-  # sleep 10
+if ! upload_cert; then
+  echo "Exit stat $? upload_cert"
 fi
 
 # Create namespaces
 kubectl create ns "${env}" && \
   kubectl label namespace "${env}" istio-injection=enabled
-
-echo "Cluster init complete"

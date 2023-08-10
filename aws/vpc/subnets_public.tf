@@ -6,7 +6,7 @@ resource "aws_subnet" "public" {
   availability_zone                              = local.configs.availability_zones[count.index]
   cidr_block                                     = local.public_ipv4_cidrs[count.index]
   ipv6_cidr_block                                = local.public_ipv6_cidrs[count.index]
-  assign_ipv6_address_on_creation                = true
+  assign_ipv6_address_on_creation                = local.configs.ipv6.assign_ipv6_address_on_creation
   enable_dns64                                   = local.configs.ipv6.enable_dns64
   map_public_ip_on_launch                        = true
   enable_resource_name_dns_a_record_on_launch    = local.configs.ipv4.enable_resource_name_dns_a_record_on_launch
@@ -16,6 +16,7 @@ resource "aws_subnet" "public" {
     "Name"                                                                    = "${local.configs.env}-${local.configs.region_code}-public-${count.index}"
     "kubernetes.io/cluster/${local.configs.env}-${local.configs.region_code}" = "owned"
     "kubernetes.io/role/elb"                                                  = "1"
+    "cpco.io/subnet/type"                                                     = "public"
   }
   lifecycle {
     # Ignore tags added by kops or kubernetes

@@ -13,6 +13,12 @@ data "tfe_outputs" "vpc" {
   workspace    = "${local.configs.env}-aws-vpc-${local.configs.region_code}"
 }
 
+data "tfe_outputs" "certs" {
+  count        = local.configs.env == "production" ? 1 : 0
+  organization = "jalgraves"
+  workspace    = "development-aws-route53-${local.configs.region_code}"
+}
+
 data "tfe_outputs" "route53" {
   organization = "jalgraves"
   workspace    = "${local.configs.env}-aws-route53-${local.configs.region_code}"
