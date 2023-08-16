@@ -10,6 +10,7 @@ locals {
   template_vars = {
     anonymous_auth_enabled               = local.configs.k8s.anonymous_auth_enabled
     api_port                             = var.api_port
+    argocd_enabled                       = local.configs.k8s.argocd_enabled
     automated_user                       = var.automated_user
     availability_zones                   = join(",", data.tfe_outputs.vpc.values.subnets.availability_zones)
     aws_account_id                       = data.aws_caller_identity.current.account_id
@@ -28,6 +29,7 @@ locals {
     env                                  = local.configs.env
     external_dns_enabled                 = local.configs.k8s.external_dns_enabled
     gateway_domains                      = join(",", var.gateway_domains)
+    github_ssh_secret                    = var.github_ssh_secret
     karpenter_enabled                    = local.configs.karpenter.enabled
     istio_enabled                        = local.configs.k8s.istio_enabled
     karpenter_instance_profile           = module.iam.karpenter.instance_profile.name
@@ -90,4 +92,7 @@ resource "aws_instance" "k8s_control_plane" {
     volume_size = 25
     volume_type = "gp3"
   }
+  depends_on = [
+    aws_s3_object.kubeadm_init
+  ]
 }
