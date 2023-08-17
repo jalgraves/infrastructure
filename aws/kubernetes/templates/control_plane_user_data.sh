@@ -21,21 +21,28 @@ chmod +x kubeadm_init.sh
   --cgroup_driver ${cgroup_driver} \
   --cluster_cidr ${cluster_cidr} \
   --cluster_name ${cluster_name} \
+  --cloud_provider ${cloud_provider} \
   --control_plane_endpoint ${control_plane_endpoint} \
-  --kubeadm_token "$KUBEADM_TOKEN" \
-  --kubeadm_cert_key "$KUBEADM_CERT_KEY" \
   --kubernetes_version ${kubernetes_version} \
   --kubelet_authorization_mode ${kubelet_authorization_mode} \
   --kubelet_tls_bootstrap_enabled ${kubelet_tls_bootstrap_enabled} \
   --sa_signer_pkcs8_pub ${sa_signer_pkcs8_pub} \
   --sa_signer_key ${sa_signer_key} \
-  --service_account_issuer_url ${service_account_issuer_url}
+  --service_account_issuer_url ${service_account_issuer_url} \
+  --region ${region}
 
 aws s3api get-object --bucket ${org}-${cluster_name}-cluster-scripts --key helm_install.sh helm_install.sh
 chmod +x helm_install.sh
 
 ./helm_install.sh \
   --api_port ${api_port} \
+  --asg-name ${asg_name} \
+  --aws_load_balancer_controller_enabled ${aws_load_balancer_controller_enabled} \
+  --aws_load_balancer_controller_replicas ${aws_load_balancer_controller_replicas} \
+  --aws_external_dns_enabled ${aws_external_dns_enabled} \
+  --aws_external_dns_replicas ${aws_external_dns_replicas} \
+  --aws_access_key_id ${aws_access_key_id} \
+  --aws_secret_access_key ${aws_secret_access_key} \
   --availability_zones ${availability_zones} \
   --cert_arns ${cert_arns} \
   --cert_manager_enabled ${cert_manager_enabled} \
@@ -57,12 +64,14 @@ chmod +x helm_install.sh
   --org ${org} \
   --pod_identity_webhook_enabled ${pod_identity_webhook_enabled} \
   --region_code ${region_code} \
-  --ssh_public_key ${ssh_public_key}
+  --ssh_public_key ${ssh_public_key} \
+  --cluster_autoscaler_enabled ${cluster_autoscaler_enabled} \
+  --region ${region}
 
 function upload_cert() {
   cert_name="${cluster_name}-$(date +%h-%d-%Y-%H%M)"
   aws iam upload-server-certificate \
-    --region ${aws_region} \
+    --region ${region} \
     --server-certificate-name "$cert_name" \
     --certificate-body file://"/etc/kubernetes/pki/apiserver.crt" \
     --private-key file://"/etc/kubernetes/pki/apiserver.key"

@@ -27,3 +27,13 @@ output "bucket" { value = module.irsa.bucket }
 output "oidc2" {
   value = module.irsa.oidc
 }
+
+output "automated_users" {
+  value = {
+    kubernetes_cluster_autoscaler = {
+      access_key_id     = aws_iam_access_key.kubernetes_cluster_autoscaler.id,
+      secret_access_key = aws_iam_access_key.kubernetes_cluster_autoscaler.secret
+    }
+  }
+  sensitive = true
+}

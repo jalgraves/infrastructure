@@ -22,4 +22,5 @@ variable "db_admin_pass" {}
 variable "contact_db_name" {}
 variable "menu_db_name" {}
 variable "merch_db_name" {}
+variable "ssh_public_key" {}
 variable "users_db_name" {}

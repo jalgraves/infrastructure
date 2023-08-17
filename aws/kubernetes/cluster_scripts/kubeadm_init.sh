@@ -21,6 +21,9 @@ for arg in "${ARGS[@]}"; do
     --cgroup_driver)
       CGROUP_DRIVER="${ARGS[$value]}"
       ;;
+    --cloud_provider)
+      CLOUD_PROVIDER="${ARGS[$value]}"
+      ;;
     --cluster_name)
       CLUSTER_NAME="${ARGS[$value]}"
       ;;
@@ -35,6 +38,9 @@ for arg in "${ARGS[@]}"; do
       ;;
     --kubernetes_version)
       KUBERNETES_VERSION="${ARGS[$value]}"
+      ;;
+    --region)
+      REGION="${ARGS[$value]}"
       ;;
     --sa_signer_pkcs8_pub)
       SA_SIGNER_PKCS8_PUB="${ARGS[$value]}"
@@ -133,6 +139,8 @@ KUBEADM_CERT_KEY=$(kubeadm certs certificate-key)
 echo "${KUBEADM_TOKEN}" > /home/ec2-user/kubeadm_token
 echo "${KUBEADM_CERT_KEY}" > /home/ec2-user/kubeadm_cert_key
 IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+AVAILABILITY_ZONE=$(wget -q -O - http://169.254.169.254/latest/meta-data/placement/availability-zone)
+INSTANCE_ID=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
 echo "$IP   ${CONTROL_PLANE_ENDPOINT}" >> /etc/hosts
 
 cat <<EOF | tee /home/ec2-user/manifests/cluster-config.yaml
@@ -160,10 +168,10 @@ apiServer:
   - "${CONTROL_PLANE_ENDPOINT}"
   - "$IP"
   extraArgs:
-    cloud-provider: aws
+    cloud-provider: "${CLOUD_PROVIDER}"
     service-account-key-file: /irsa/sa-signer-pkcs8.pub
     service-account-signing-key-file: /irsa/sa-signer.key
-    api-audiences: sts.amazonaws.com
+    api-audiences: "api,sts.amazonaws.com"
     service-account-issuer: ${SERVICE_ACCOUNT_ISSUER_URL}
   extraVolumes:
     - name: "irsa"
@@ -198,14 +206,106 @@ authentication:
 authorization:
   mode: ${KUBELET_AUTHORIZATION_MODE}
 serverTLSBootstrap: ${KUBELET_TLS_BOOTSTRAP_ENABLED}
+providerID: "aws://$AVAILABILITY_ZONE/$INSTANCE_ID"
 EOF
 
 
 kubeadm init \
-  --v=10 \
+  --v=5 \
   --config /home/ec2-user/manifests/cluster-config.yaml \
   --upload-certs
 
+sleep 10
+CA_CERT_HASH=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* /sha256:/')
+
+aws secretsmanager create-secret \
+  --region "$REGION" \
+  --name "$CLUSTER_NAME-cluster-secret" \
+  --description "My test secret created with the CLI." \
+  --secret-string "{\"join_token\":\"$KUBEADM_TOKEN\",\"ca_cert_hash\":\"$CA_CERT_HASH\"}"
+
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:node-bootstrapper
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:node-bootstrapper
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:bootstrappers:kubeadm:default-node-token
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:node:ip-10-6-49-0.us-east-2.compute.internal
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: system:node:ip-10-6-49-0.us-east-2.compute.internal
+EOF
+
+
+kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-api-access
+rules:
+- nonResourceURLs:
+  - /api
+  - /api/v1
+  - /apis
+  - /apis/*
+  - /swagger-2.0.0.pb-v1
+  - /openapi
+  - /openapi/v2
+  verbs:
+  - get
+  - list
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get"]
+- apiGroups: ["node.k8s.io"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["nodes", "events", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["nodes/status"]
+  verbs: ["patch"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["create"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csidrivers"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-api-access
+subjects:
+- kind: User
+  name: "system:anonymous"
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: node-api-access
+  apiGroup: rbac.authorization.k8s.io
+EOF
 # Create credentials for ec2-user
 mkdir -p "$HOME/.kube"
 mkdir /home/ec2-user/.kube

@@ -13,14 +13,14 @@ data "amazon-ami" "this" {
 }
 
 source "amazon-ebs" "k8s-worker" {
-  ami_name             = "development_use2_k8s_worker {{timestamp}}"
+  ami_name             = "production_use2_k8s_worker {{timestamp}}"
   instance_type        = "t2.micro"
   region               = "us-east-2"
   source_ami           = data.amazon-ami.this.id
   ssh_username         = "ec2-user"
   ssh_interface        = "public_ip"
   communicator         = "ssh"
-  iam_instance_profile = "DevelopmentUse2Packer"
+  iam_instance_profile = "ProductionUse2Packer"
   subnet_filter {
     filters = {
       "tag:cpco.io/subnet/type": "public"
@@ -31,6 +31,7 @@ source "amazon-ebs" "k8s-worker" {
   temporary_security_group_source_public_ip = true
   tags = {
     "cpco.io/ami/type" = "k8s-worker"
+    "cpco.io/ami/env" = "production"
   }
   // user_data_file = "../aws/kubernetes/templates/join_cluster.sh"
 }

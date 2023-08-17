@@ -3,7 +3,7 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  db_creds = {
+  database_creds = {
     contact_db_name = var.contact_db_name
     db_admin_pass   = var.db_admin_pass
     db_admin_user   = var.db_admin_user
@@ -15,11 +15,12 @@ locals {
   }
 }
 
-resource "aws_secretsmanager_secret" "db_creds" {
-  name = "${local.configs.cluster_name}-db-creds"
+resource "aws_secretsmanager_secret" "database_creds" {
+  name                    = "${local.configs.cluster_name}-database-creds"
+  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "example" {
-  secret_id     = aws_secretsmanager_secret.db_creds.id
-  secret_string = jsonencode(local.db_creds)
+  secret_id     = aws_secretsmanager_secret.database_creds.id
+  secret_string = jsonencode(local.database_creds)
 }

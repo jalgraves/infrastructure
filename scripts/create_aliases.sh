@@ -42,10 +42,12 @@ alias k='kubectl' && \
   alias kdpargo='kubectl describe pod -n argocd' && \
   alias kgpargo='kubectl get pods -n argocd'
 
+helm repo add beantown https://beantownpub.github.io/helm/
 
 function install_istio() {
   helm upgrade istio beantown/istio --install \
     --namespace istio-system \
+    --set argoCd.enabled=true \
     --set ingress.albPublic.externalDns.hostnames[0]="*.use2.production.aws.beantownpub.com" \
     --set ingress.albPublic.accessLogs.enabled=false \
     --set ingress.albPrivate.enabled=false \
