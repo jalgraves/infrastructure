@@ -21,6 +21,23 @@ locals {
     square_application_id_sandbox = var.square_application_id_sandbox
     square_url                    = var.square_url
   }
+  contact_api_creds = {
+    aws_access_key_id        = var.aws_access_key_id
+    aws_default_region       = var.aws_default_region
+    aws_secret_access_key    = var.aws_secret_access_key
+    email_recipient          = var.email_recipient
+    second_email_recipient   = var.second_email_recipient
+    slack_channel            = var.slack_channel
+    slack_orders_channel     = var.slack_orders_channel
+    slack_orders_webhook_url = var.slack_orders_webhook_url
+    slack_partys_channel     = var.slack_partys_channel
+    slack_partys_webhook_url = var.slack_partys_webhook_url
+    slack_user               = var.slack_user
+    slack_webhook_url        = var.slack_webhook_url
+    support_email_address    = var.support_email_address
+    support_phone_number     = var.support_phone_number
+    test_email_recipient     = var.test_email_recipient
+  }
   database_creds = {
     contact_db_name = var.contact_db_name
     db_admin_pass   = var.db_admin_pass
