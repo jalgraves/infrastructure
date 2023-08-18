@@ -29,6 +29,7 @@ chmod +x kubeadm_init.sh
   --sa_signer_pkcs8_pub ${sa_signer_pkcs8_pub} \
   --sa_signer_key ${sa_signer_key} \
   --service_account_issuer_url ${service_account_issuer_url} \
+  --secret_arn ${secret_arn} \
   --region ${region}
 
 aws s3api get-object --bucket ${org}-${cluster_name}-cluster-scripts --key helm_install.sh helm_install.sh
@@ -68,19 +69,16 @@ chmod +x helm_install.sh
   --cluster_autoscaler_enabled ${cluster_autoscaler_enabled} \
   --region ${region}
 
-function upload_cert() {
-  cert_name="${cluster_name}-$(date +%h-%d-%Y-%H%M)"
-  aws iam upload-server-certificate \
-    --region ${region} \
-    --server-certificate-name "$cert_name" \
-    --certificate-body file://"/etc/kubernetes/pki/apiserver.crt" \
-    --private-key file://"/etc/kubernetes/pki/apiserver.key"
-}
-
-if ! upload_cert; then
-  echo "Exit stat $? upload_cert"
-fi
-
 # Create namespaces
 kubectl create ns "${env}" && \
   kubectl label namespace "${env}" istio-injection=enabled
+kubectl create ns database
+
+aws s3api get-object --bucket ${org}-${cluster_name}-cluster-scripts --key create_secrets.sh create_secrets.sh
+chmod +x create_secrets.sh
+
+./create_secrets.sh \
+  --region ${region} \
+  --app_secret_name ${app_secret_name} \
+  --beantown_secret_name ${beantown_secret_name} \
+  --database_secret_name ${database_secret_name}

@@ -42,6 +42,9 @@ for arg in "${ARGS[@]}"; do
     --region)
       REGION="${ARGS[$value]}"
       ;;
+    --secret_arn)
+      SECRET_ARN="${ARGS[$value]}"
+      ;;
     --sa_signer_pkcs8_pub)
       SA_SIGNER_PKCS8_PUB="${ARGS[$value]}"
       ;;
@@ -206,7 +209,7 @@ authentication:
 authorization:
   mode: ${KUBELET_AUTHORIZATION_MODE}
 serverTLSBootstrap: ${KUBELET_TLS_BOOTSTRAP_ENABLED}
-providerID: "aws://$AVAILABILITY_ZONE/$INSTANCE_ID"
+providerID: "aws:///$AVAILABILITY_ZONE/$INSTANCE_ID"
 EOF
 
 
@@ -218,10 +221,9 @@ kubeadm init \
 sleep 10
 CA_CERT_HASH=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* /sha256:/')
 
-aws secretsmanager create-secret \
+aws secretsmanager update-secret \
   --region "$REGION" \
-  --name "$CLUSTER_NAME-cluster-secret" \
-  --description "My test secret created with the CLI." \
+  --secret-id "$SECRET_ARN" \
   --secret-string "{\"join_token\":\"$KUBEADM_TOKEN\",\"ca_cert_hash\":\"$CA_CERT_HASH\"}"
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -332,3 +334,22 @@ EOF
 
 chmod +x /opt/approve_certs.sh
 echo '*/1 * * * * /bin/bash /opt/approve_certs.sh' >> /var/spool/cron/root
+
+cat <<'EOF' > /opt/node_label.sh
+#!/bin/bash
+echo "Running $(date)" >> /var/log/${cluster_name}-crons/node_label.txt
+export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl config use-context kubernetes-admin@${cluster_name}
+NODES=$(kubectl get nodes -o custom-columns=NAME:metadata.name --no-headers)
+for node in $NODES; do
+  echo "Node: $node" >> /opt/node_label_cron_debug.txt
+  role=$(kubectl get nodes "$node" -o json | jq '.metadata.labels["role"]' | tr -d '"')
+  echo "node-role.kubernetes.io/$role=" >> /opt/node_label_cron_debug.txt
+  if [[ "$role" = "istio" ]] || [[ "$role" = "worker" ]]; then
+      echo "Adding label node-role.kubernetes.io/$role= to Node $node"
+      kubectl label node "$node" "node-role.kubernetes.io/$role="
+  fi
+done
+EOF
+chmod +x /opt/node_label.sh
+echo '*/5 * * * * /bin/bash /opt/node_label.sh' >> /var/spool/cron/root

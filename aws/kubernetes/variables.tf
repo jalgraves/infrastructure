@@ -24,3 +24,17 @@ variable "menu_db_name" {}
 variable "merch_db_name" {}
 variable "ssh_public_key" {}
 variable "users_db_name" {}
+
+variable "kafka_bootstrap_server" {}
+variable "kafka_password" {}
+variable "kafka_username" {}
+variable "session_secret" {}
+variable "square_access_token_dev" {}
+variable "square_access_token_prod" {}
+variable "square_application_id_sandbox" {}
+variable "square_url" {}
+
+variable "api_user" {}
+variable "api_pass" {}
+variable "db_host" {}
+variable "db_port" {}

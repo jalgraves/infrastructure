@@ -4,24 +4,29 @@
 
 data "aws_caller_identity" "current" {}
 
+resource "aws_secretsmanager_secret" "cluster" {
+  name_prefix = "${local.configs.cluster_name}-k8s-"
+}
+
 locals {
   cert_arns = concat([data.tfe_outputs.route53.values.acm.certificates.env.arn], data.tfe_outputs.certs[0].values.acm.certificates.client_domain_arns)
 
   template_vars = {
     anonymous_auth_enabled                = local.configs.k8s.anonymous_auth_enabled
+    app_secret_name                       = aws_secretsmanager_secret.app_creds.name
     api_port                              = var.api_port
     argocd_enabled                        = local.configs.k8s.argocd_enabled
     asg_name                              = aws_autoscaling_group.kubernetes_cluster_autoscaler.name
     automated_user                        = var.automated_user
     availability_zones                    = join(",", data.tfe_outputs.vpc.values.subnets.availability_zones)
+    aws_access_key_id                     = aws_iam_access_key.kubernetes_cluster_autoscaler.id,
     aws_account_id                        = data.aws_caller_identity.current.account_id
     aws_external_dns_enabled              = local.configs.aws_external_dns.enabled
     aws_external_dns_replicas             = local.configs.aws_external_dns.replicas
     aws_load_balancer_controller_enabled  = local.configs.aws_load_balancer_controller.enabled
     aws_load_balancer_controller_replicas = local.configs.aws_load_balancer_controller.replicas
-    region                                = local.configs.region
-    aws_access_key_id                     = aws_iam_access_key.kubernetes_cluster_autoscaler.id,
     aws_secret_access_key                 = aws_iam_access_key.kubernetes_cluster_autoscaler.secret
+    beantown_secret_name                  = aws_secretsmanager_secret.beantown_creds.name
     cert_arns                             = join(",", local.cert_arns)
     cert_manager_enabled                  = local.configs.k8s.cert_manager_enabled
     cgroup_driver                         = local.configs.k8s.cgroup_driver
@@ -33,13 +38,14 @@ locals {
     cluster_domain                        = var.cluster_domain
     cluster_name                          = local.configs.cluster_name
     control_plane_endpoint                = var.control_plane_endpoint
+    database_secret_name                  = aws_secretsmanager_secret.database_creds.name
     ebs_csi_driver_enabled                = local.configs.k8s.ebs_csi_driver_enabled
     env                                   = local.configs.env
     external_dns_enabled                  = local.configs.k8s.external_dns_enabled
     gateway_domains                       = join(",", var.gateway_domains)
     github_ssh_secret                     = var.github_ssh_secret
-    karpenter_enabled                     = local.configs.karpenter.enabled
     istio_enabled                         = local.configs.k8s.istio_enabled
+    karpenter_enabled                     = local.configs.karpenter.enabled
     karpenter_instance_profile            = module.iam.karpenter.instance_profile.name
     karpenter_replicas                    = local.configs.karpenter.replicas
     karpenter_service_account_role_arn    = module.iam.karpenter.role.arn
@@ -50,7 +56,9 @@ locals {
     metrics_server_enabled                = local.configs.k8s.metrics_server_enabled
     org                                   = var.org
     pod_identity_webhook_enabled          = local.configs.k8s.pod_identity_webhook_enabled
+    region                                = local.configs.region
     region_code                           = local.configs.region_code
+    secret_arn                            = aws_secretsmanager_secret.cluster.arn
     sa_signer_key                         = var.sa_signer_key
     sa_signer_pkcs8_pub                   = var.sa_signer_pkcs8_pub
     service_account_issuer_url            = "https://${module.irsa.oidc.issuer}"
@@ -103,6 +111,14 @@ resource "aws_instance" "k8s_control_plane" {
   depends_on = [
     aws_s3_object.kubeadm_init
   ]
+}
+
+resource "aws_route53_record" "k8s" {
+  zone_id = data.tfe_outputs.route53.values.route53.zones.region.id
+  name    = "k8s"
+  type    = "A"
+  ttl     = 30
+  records = [aws_instance.k8s_control_plane.private_ip]
 }
 
 resource "aws_instance" "worker" {

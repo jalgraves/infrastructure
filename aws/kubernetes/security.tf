@@ -28,6 +28,7 @@ resource "aws_security_group" "internal_traffic" {
     Name                                                   = "${local.configs.cluster_name}-internal-traffic"
     "k8s.io/cluster/${local.configs.cluster_name}"         = "owned"
     "karpenter.sh/discovery/${local.configs.cluster_name}" = local.configs.cluster_name
+    "kubernetes.io/cluster/${local.configs.cluster_name}"  = "owned"
   }
 }
 

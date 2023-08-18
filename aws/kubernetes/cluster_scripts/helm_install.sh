@@ -35,7 +35,7 @@ for arg in "${ARGS[@]}"; do
     --cert_arns)
       CERT_ARNS="${ARGS[$value]}"
       ;;
-    --cluster_auto_scaler_enabled)
+    --cluster_autoscaler_enabled)
       CLUSTER_AUTOSCALER_ENABLED="${ARGS[$value]}"
       ;;
     --cluster_domain)
@@ -168,7 +168,8 @@ sleep 10
 
 function install_ca() {
   helm repo add autoscaler https://kubernetes.github.io/autoscaler
-  helm upgrade --install my-release autoscaler/cluster-autoscaler \
+  helm upgrade --install "$CLUSTER_NAME" autoscaler/cluster-autoscaler \
+    --namespace kube-system \
     --set "autoscalingGroups[0].name=$ASG_NAME" \
     --set "awsRegion=$REGION" \
     --set "autoscalingGroups[0].maxSize=2" \
@@ -240,11 +241,6 @@ if [[ ${POD_IDENTITY_WEBHOOK_ENABLED} = "true" ]]; then
     --namespace kube-system
 fi
 sleep 10
-
-# if [[ ${KARPENTER_ENABLED} = "true" ]]; then
-#   install_karpenter
-# fi
-# sleep 2
 
 if [[ ${CLUSTER_AUTOSCALER_ENABLED} = "true" ]]; then
   install_ca

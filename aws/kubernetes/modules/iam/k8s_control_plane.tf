@@ -112,7 +112,16 @@ resource "aws_iam_policy" "k8s_control_plane" {
           "waf-regional:GetWebACLForResource",
           "wafv2:GetWebACL",
           "wafv2:GetWebACLForResource",
-          "sts:*"
+          "sts:*",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:RestoreSecret",
+          "secretsmanager:UpdateSecret"
         ],
         "Resource" : [
           "*"

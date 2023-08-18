@@ -50,7 +50,12 @@ resource "aws_iam_policy" "k8s_worker" {
           "ecr:DescribeRepositories",
           "ecr:ListImages",
           "ecr:BatchGetImage",
-          "sts:AssumeRole"
+          "sts:AssumeRole",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets",
+          "secretsmanager:DescribeSecret",
+          "shield:GetSubscriptionState",
+          "wafv2:GetWebACLForResource"
         ],
         "Resource" : "*"
       }
