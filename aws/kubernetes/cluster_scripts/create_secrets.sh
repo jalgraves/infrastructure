@@ -17,6 +17,9 @@ for arg in "${ARGS[@]}"; do
     --beantown_secret_name)
       BEANTOWN_SECRET_NAME="${ARGS[$value]}"
       ;;
+    --contact_api_secret_name)
+      CONTACT_API_SECRET_NAME="${ARGS[$value]}"
+      ;;
     --database_secret_name)
       DATABASE_SECRET_NAME="${ARGS[$value]}"
       ;;
@@ -69,7 +72,7 @@ data:
 kind: Secret
 metadata:
   name: beantown-creds
-  namespace: database
+  namespace: "${ENV}"
 type: Opaque
 EOF
 
@@ -94,3 +97,36 @@ metadata:
   namespace: "${ENV}"
 type: Opaque
 EOF
+
+kubectl apply -f /home/ec2-user/manifests/db-secrets.yaml
+
+APP_SECRET=$(aws secretsmanager get-secret-value --region "$REGION" \
+  --secret-id "$CONTACT_API_SECRET_NAME" | jq -r '.SecretString' | jq '.' | jq .
+)
+
+cat <<EOF | tee /home/ec2-user/manifests/contact-api-secrets.yaml
+apiVersion: v1
+data:
+  aws_access_key_id: "$(echo "$CONTACT_API_SECRET" | jq -r '.aws_access_key_id' | base64 -w 0)"
+  aws_default_region: "$(echo "$CONTACT_API_SECRET" | jq -r '.aws_default_region' | base64 -w 0)"
+  aws_secret_access_key: "$(echo "$CONTACT_API_SECRET" | jq -r '.aws_secret_access_key' | base64 -w 0)"
+  email_recipient: "$(echo "$CONTACT_API_SECRET" | jq -r '.email_recipient' | base64 -w 0)"
+  second_email_recipient: "$(echo "$CONTACT_API_SECRET" | jq -r '.second_email_recipient' | base64 -w 0)"
+  slack_channel: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_channel' | base64 -w 0)"
+  slack_orders_channel: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_orders_channel' | base64 -w 0)"
+  slack_orders_webhook_url: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_orders_webhook_url' | base64 -w 0)"
+  slack_partys_channel: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_partys_channel' | base64 -w 0)"
+  slack_partys_webhook_url: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_partys_webhook_url' | base64 -w 0)"
+  slack_user: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_user' | base64 -w 0)"
+  slack_webhook_url: "$(echo "$CONTACT_API_SECRET" | jq -r '.slack_webhook_url' | base64 -w 0)"
+  support_email_address: "$(echo "$CONTACT_API_SECRET" | jq -r '.support_email_address' | base64 -w 0)"
+  support_phone_number: "$(echo "$CONTACT_API_SECRET" | jq -r '.support_phone_number' | base64 -w 0)"
+  test_email_recipient: "$(echo "$CONTACT_API_SECRET" | jq -r '.test_email_recipient' | base64 -w 0)"
+kind: Secret
+metadata:
+  name: contact-api-creds
+  namespace: "${ENV}"
+type: Opaque
+EOF
+
+kubectl apply -f /home/ec2-user/manifests/contact-api-secrets.yaml

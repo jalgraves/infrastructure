@@ -78,7 +78,9 @@ aws s3api get-object --bucket ${org}-${cluster_name}-cluster-scripts --key creat
 chmod +x create_secrets.sh
 
 ./create_secrets.sh \
+  --env ${env} \
   --region ${region} \
   --app_secret_name ${app_secret_name} \
   --beantown_secret_name ${beantown_secret_name} \
-  --database_secret_name ${database_secret_name}
+  --database_secret_name ${database_secret_name} \
+  --contact_api_secret_name ${contact_api_secret_name}

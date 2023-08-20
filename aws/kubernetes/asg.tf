@@ -69,7 +69,6 @@ locals {
   join_user_data = templatefile("${path.module}/templates/join_cluster.sh", local.join_template_vars)
 }
 
-
 resource "aws_launch_template" "kubernetes_cluster_autoscaler" {
   ebs_optimized = true
   image_id      = data.aws_ami.worker_node.id

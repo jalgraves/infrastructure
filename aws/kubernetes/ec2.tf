@@ -27,6 +27,7 @@ locals {
     aws_load_balancer_controller_replicas = local.configs.aws_load_balancer_controller.replicas
     aws_secret_access_key                 = aws_iam_access_key.kubernetes_cluster_autoscaler.secret
     beantown_secret_name                  = aws_secretsmanager_secret.beantown_creds.name
+    contact_api_secret_name               = aws_secretsmanager_secret.contact_api_creds.name
     cert_arns                             = join(",", local.cert_arns)
     cert_manager_enabled                  = local.configs.k8s.cert_manager_enabled
     cgroup_driver                         = local.configs.k8s.cgroup_driver
@@ -82,13 +83,19 @@ data "aws_ami" "amazon_linux_2" {
   }
 }
 
+resource "aws_key_pair" "k8s_cluster" {
+  key_name   = "${local.configs.env}-${local.configs.region_code}-k8s-cluster-key-pair"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGkkKlhgtzhJob2Q67MSjpV0L1rmmnkay05IS1KUm2Hp"
+}
+
 resource "aws_instance" "k8s_control_plane" {
   ami                         = data.aws_ami.amazon_linux_2.id
   instance_type               = local.configs.ec2.instance_type
   user_data                   = local.k8s_control_plane_user_data
   iam_instance_profile        = module.iam.k8s_control_plane.instance_profile.name
   associate_public_ip_address = false
-  key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
+  #key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
+  key_name = aws_key_pair.k8s_cluster.id
   subnet_id                   = data.tfe_outputs.vpc.values.subnets.private.ids[0]
   vpc_security_group_ids = [
     aws_security_group.internal_traffic.id,

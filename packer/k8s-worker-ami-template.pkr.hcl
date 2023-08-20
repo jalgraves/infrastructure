@@ -1,4 +1,11 @@
-
+packer {
+  required_plugins {
+    amazon = {
+      source  = "github.com/hashicorp/amazon"
+      version = "~> 1"
+    }
+  }
+}
 
 data "amazon-ami" "this" {
   filters = {
@@ -33,10 +40,14 @@ source "amazon-ebs" "k8s-worker" {
     "cpco.io/ami/type" = "k8s-worker"
     "cpco.io/ami/env" = "production"
   }
-  // user_data_file = "../aws/kubernetes/templates/join_cluster.sh"
+  user_data_file = "./scripts/install_kubeadm.sh"
 }
 
 build {
+  sources = ["source.amazon-ebs.k8s-worker"]
+}
+
+/* build {
   sources = ["source.amazon-ebs.k8s-worker"]
 
   provisioner "shell" {
@@ -109,4 +120,4 @@ sudo ./aws/install
       EOF
     ]
   }
-}
+} */

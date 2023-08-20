@@ -38,3 +38,16 @@ variable "api_user" {}
 variable "api_pass" {}
 variable "db_host" {}
 variable "db_port" {}
+
+variable "email_recipient" {}
+variable "second_email_recipient" {}
+variable "slack_channel" {}
+variable "slack_orders_channel" {}
+variable "slack_orders_webhook_url" {}
+variable "slack_partys_channel" {}
+variable "slack_partys_webhook_url" {}
+variable "slack_user" {}
+variable "slack_webhook_url" {}
+variable "support_email_address" {}
+variable "support_phone_number" {}
+variable "test_email_recipient" {}
