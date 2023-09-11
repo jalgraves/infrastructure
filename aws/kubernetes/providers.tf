@@ -8,7 +8,7 @@ terraform {
     # Provider versions are pinned to avoid unexpected upgrades
     aws = {
       source  = "hashicorp/aws"
-      version = "5.10.0"
+      version = "5.16.0"
     }
     local = {
       source  = "hashicorp/local"

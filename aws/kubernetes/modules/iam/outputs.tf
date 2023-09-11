@@ -18,10 +18,8 @@ output "k8s_worker" {
   }
 }
 
-output "karpenter" {
-  value = {
-    instance_profile = aws_iam_instance_profile.karpenter
-    role             = aws_iam_role.karpenter
-    policy           = aws_iam_policy.karpenter
-  }
+output "app_role_arns" {
+  value = { for app in local.apps : app.name => aws_iam_role.app_roles[app.name].arn }
+
+  #  value = aws_iam_role.app_roles
 }

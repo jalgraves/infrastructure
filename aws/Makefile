@@ -6,17 +6,19 @@ SHELL := /bin/bash
 
 upgrade ?= false
 region_code ?= use2
+directory ?= $(@F)
 aws_workspace ?= $(env)-aws-$(directory)-$(region_code)
 org ?= jalgraves
 
 ## Run terraform init on aws directory
-aws/init:
-	cd aws/$(directory) && \
+aws/init/%:
+	cd aws/$(@F) && \
 		terraform init -upgrade=$(upgrade)
 
 ## Run terraform plan on aws directory
-aws/plan: aws/workspace
-	cd aws/$(directory) && \
+aws/plan/%:
+	cd aws/$(@F) && \
+		terraform workspace select $(aws_workspace) && \
 		aws-vault exec beantown:dev -- terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform plan on specific resource in aws an directory
@@ -25,8 +27,9 @@ aws/plan/target: aws/workspace
 		aws-vault exec beantown:dev -- terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
 
 ## Run terraform apply on aws directory
-aws/apply: aws/workspace
-	cd aws/$(directory) && \
+aws/apply/%:
+	cd aws/$(@F) && \
+		terraform workspace select $(aws_workspace) && \
 		aws-vault exec beantown:dev -- terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform apply on specific resource in an aws directory
@@ -54,7 +57,7 @@ aws/validate: aws/workspace
 	cd aws/$(directory) && terraform validate
 
 ## Run terraform workspace select
-aws/workspace:
+aws/workspace/%:
 	cd aws/$(directory) && \
 		terraform workspace select $(aws_workspace)
 

@@ -19,11 +19,11 @@ variable "db_user" {}
 variable "db_pass" {}
 variable "db_admin_user" {}
 variable "db_admin_pass" {}
-variable "contact_db_name" {}
-variable "menu_db_name" {}
-variable "merch_db_name" {}
+variable "contact_api_db_name" {}
+variable "merch_api_db_name" {}
 variable "ssh_public_key" {}
-variable "users_db_name" {}
+variable "k8s_cluster_public_key" {}
+variable "users_api_db_name" {}
 
 variable "kafka_bootstrap_server" {}
 variable "kafka_password" {}
@@ -51,3 +51,14 @@ variable "slack_webhook_url" {}
 variable "support_email_address" {}
 variable "support_phone_number" {}
 variable "test_email_recipient" {}
+variable "menu_api_db_name" {}
+variable "square_location_id" {}
+
+variable "merch_api_host" {}
+variable "merch_api_port" {}
+variable "menu_api_host" {}
+variable "menu_api_port" {}
+variable "contact_api_host" {}
+variable "contact_api_port" {}
+variable "users_api_host" {}
+variable "users_api_port" {}

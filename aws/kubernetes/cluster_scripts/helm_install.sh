@@ -5,11 +5,11 @@ ARG_INDEX=0
 for arg in "${ARGS[@]}"; do
   value=$((ARG_INDEX+1))
   case $arg in
-    --api_port)
-      API_PORT="${ARGS[$value]}"
-      ;;
-    --asg-name)
+    --asg_name)
       ASG_NAME="${ARGS[$value]}"
+      ;;
+    --argocd_enabled)
+      ARGOCD_ENABLED="${ARGS[$value]}"
       ;;
     --aws_load_balancer_controller_enabled)
       AWS_LOAD_BALANCER_CONTROLLER_ENABLED="${ARGS[$value]}"
@@ -29,9 +29,6 @@ for arg in "${ARGS[@]}"; do
     --aws_secret_access_key)
       AWS_SECRET_ACCESS_KEY="${ARGS[$value]}"
       ;;
-    --availability_zones)
-      AVAILABILITY_ZONES="${ARGS[$value]}"
-      ;;
     --cert_arns)
       CERT_ARNS="${ARGS[$value]}"
       ;;
@@ -40,9 +37,6 @@ for arg in "${ARGS[@]}"; do
       ;;
     --cluster_domain)
       CLUSTER_DOMAIN="${ARGS[$value]}"
-      ;;
-    --control_plane_endpoint)
-      CONTROL_PLANE_ENDPOINT="${ARGS[$value]}"
       ;;
     --ebs_csi_driver_enabled)
       EBS_CSI_DRIVER_ENABLED="${ARGS[$value]}"
@@ -80,26 +74,8 @@ for arg in "${ARGS[@]}"; do
     --region)
       REGION="${ARGS[$value]}"
       ;;
-    # --ssh_public_key)
-    #   SSH_PUBLIC_KEY="${ARGS[$value]}"
-    #   ;;
     --cert_manager_enabled)
       CERT_MANAGER_ENABLED="${ARGS[$value]}"
-      ;;
-    --karpenter_instance_profile)
-      KARPENTER_INSTANCE_PROFILE="${ARGS[$value]}"
-      ;;
-    --karpenter_enabled)
-      KARPENTER_ENABLED="${ARGS[$value]}"
-      ;;
-    --karpenter_version)
-      KARPENTER_VERSION="${ARGS[$value]}"
-      ;;
-    --karpenter_service_account_role_arn)
-      KARPENTER_SERVICE_ACCOUNT_ROLE_ARN="${ARGS[$value]}"
-      ;;
-    --karpenter_replicas)
-      KARPENTER_REPLICAS="${ARGS[$value]}"
       ;;
   esac
   ((ARG_INDEX=ARG_INDEX+1))
@@ -134,79 +110,6 @@ helm upgrade cilium cilium/cilium --install \
   --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="${CLUSTER_CIDR}"
 
 sleep 10
-
-# IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-# KUBEADM_TOKEN=$(cat /home/ec2-user/kubeadm_token)
-# CA_CERT_HASH=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* /sha256:/')
-
-# function install_karpenter() {
-#   helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
-#     --install \
-#     --create-namespace \
-#     --version "${KARPENTER_VERSION}" \
-#     --namespace karpenter \
-#     --set settings.aws.clusterName="${CLUSTER_NAME}" \
-#     --set settings.aws.clusterEndpoint="https://$IP:${API_PORT}" \
-#     --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"="${KARPENTER_SERVICE_ACCOUNT_ROLE_ARN}" \
-#     --set replicas="${KARPENTER_REPLICAS}"
-
-#   sleep 30
-#   helm upgrade karpenter-provisioners beantown/karpenter-provisioners \
-#     --install \
-#     --set clusterName="${CLUSTER_NAME}" \
-#     --set aws.instanceProfile="${KARPENTER_INSTANCE_PROFILE}" \
-#     --set env="${ENV}" \
-#     --set consolidation.enabled=false \
-#     --set aws.availabilityZones="{${AVAILABILITY_ZONES}}" \
-#     --set aws.sshPublicKey="${SSH_PUBLIC_KEY}" \
-#     --set apiAddress="$IP" \
-#     --set apiPort="${API_PORT}" \
-#     --set caCertHash="$CA_CERT_HASH" \
-#     --set joinToken="$KUBEADM_TOKEN" \
-#     --set controlPlaneEndpoint="${CONTROL_PLANE_ENDPOINT}"
-# }
-
-function install_ca() {
-  helm repo add autoscaler https://kubernetes.github.io/autoscaler
-  helm upgrade --install "$CLUSTER_NAME" autoscaler/cluster-autoscaler \
-    --namespace kube-system \
-    --set "autoscalingGroups[0].name=$ASG_NAME" \
-    --set "awsRegion=$REGION" \
-    --set "autoscalingGroups[0].maxSize=2" \
-    --set "autoscalingGroups[0].minSize=1" \
-    --set awsAccessKeyID="$AWS_ACCESS_KEY_ID" \
-    --set awsSecretAccessKey="$AWS_SECRET_ACCESS_KEY"
-}
-
-
-function install_argocd() {
-  kubectl create namespace argocd
-  helm upgrade istio beantown/istio \
-    --install \
-    --namespace istio-system \
-    --set argoCd.enabled=true \
-    --set ingress.albPublic.externalDns.hostnames[0]="*.${CLUSTER_DOMAIN}" \
-    --set ingress.albPublic.accessLogs.enabled=false \
-    --set ingress.albPrivate.enabled=false \
-    --set ingress.gatewayDomains="{${GATEWAY_DOMAINS}}" \
-    --set certArns="{${CERT_ARNS}}" \
-    --set sslPolicy=ELBSecurityPolicy-TLS13-1-2-2021-06 \
-    --set environment="${ENV}" \
-    --set gateway.replicaCount=1 \
-    --set gateway.nodeSelector.role=worker \
-    --set istiod.pilot.nodeSelector.role=worker \
-    --set regionCode="${REGION_CODE}" \
-    --set org="${ORG}" \
-    --create-namespace
-  sleep 10
-  echo "${GITHUB_SSH_SECRET}" | base64 -d > /home/ec2-user/.ssh/argo_ed25519
-  kubectl create secret generic github-ssh -n argocd --from-file=sshPrivateKey=/home/ec2-user/.ssh/argo_ed25519
-
-  helm upgrade argo-cd beantown/argo-cd \
-    --install \
-    --namespace argocd \
-    --create-namespace
-}
 
 if [[ ${METRICS_SERVER_ENABLED} = "true" ]]; then
   helm upgrade metrics-server bitnami/metrics-server \
@@ -243,7 +146,18 @@ fi
 sleep 10
 
 if [[ ${CLUSTER_AUTOSCALER_ENABLED} = "true" ]]; then
-  install_ca
+  helm repo add autoscaler https://kubernetes.github.io/autoscaler
+  helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler \
+    --namespace kube-system \
+    --set nameOveride=cluster-autoscaler \
+    --set extraArgs.scale-down-unneeded-time=5m \
+    --set extraArgs.scale-down-unready-time=5m \
+    --set "autoscalingGroups[0].name=$ASG_NAME" \
+    --set "awsRegion=$REGION" \
+    --set "autoscalingGroups[0].maxSize=2" \
+    --set "autoscalingGroups[0].minSize=1" \
+    --set awsAccessKeyID="$AWS_ACCESS_KEY_ID" \
+    --set awsSecretAccessKey="$AWS_SECRET_ACCESS_KEY"
 fi
 sleep 2
 
@@ -257,7 +171,6 @@ if [[ ${AWS_EXTERNAL_DNS_ENABLED} = "true" ]]; then
     --set replicaCount="${AWS_EXTERNAL_DNS_REPLICAS}"
 fi
 
-
 if [[ ${AWS_LOAD_BALANCER_CONTROLLER_ENABLED} = "true" ]]; then
   helm upgrade aws-load-balancer-controller aws/aws-load-balancer-controller \
     --install \
@@ -267,4 +180,12 @@ if [[ ${AWS_LOAD_BALANCER_CONTROLLER_ENABLED} = "true" ]]; then
   sleep 15
 fi
 
-install_argocd
+if [[ ${ARGOCD_ENABLED} = "true" ]]; then
+  kubectl create namespace argocd
+  echo "${GITHUB_SSH_SECRET}" | base64 -d > /home/ec2-user/.ssh/argo_ed25519
+  kubectl create secret generic github-ssh -n argocd --from-file=sshPrivateKey=/home/ec2-user/.ssh/argo_ed25519
+  helm upgrade argo-cd beantown/argo-cd \
+    --install \
+    --namespace argocd \
+    --create-namespace
+fi

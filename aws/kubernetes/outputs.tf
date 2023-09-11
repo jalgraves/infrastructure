@@ -7,14 +7,6 @@ output "k8s_control_plane" {
   }
 }
 
-output "karpenter" {
-  value = {
-    role = {
-      arn = module.iam.karpenter.role.arn
-    }
-  }
-}
-
 output "oidc" {
   value = {
     issuer_url   = module.irsa.oidc.issuer
@@ -22,7 +14,11 @@ output "oidc" {
   }
 }
 
-output "bucket" { value = module.irsa.bucket }
+output "bucket" {
+  value = {
+    arn = module.irsa.bucket.arn
+  }
+}
 
 output "oidc2" {
   value = module.irsa.oidc
@@ -36,4 +32,8 @@ output "automated_users" {
     }
   }
   sensitive = true
+}
+
+output "app_roles" {
+  value = module.iam.app_role_arns
 }

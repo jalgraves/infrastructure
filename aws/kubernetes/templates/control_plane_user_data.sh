@@ -37,7 +37,8 @@ chmod +x helm_install.sh
 
 ./helm_install.sh \
   --api_port ${api_port} \
-  --asg-name ${asg_name} \
+  --asg_name ${asg_name} \
+  --argocd_enabled ${argocd_enabled} \
   --aws_load_balancer_controller_enabled ${aws_load_balancer_controller_enabled} \
   --aws_load_balancer_controller_replicas ${aws_load_balancer_controller_replicas} \
   --aws_external_dns_enabled ${aws_external_dns_enabled} \
@@ -56,11 +57,6 @@ chmod +x helm_install.sh
   --env ${env} \
   --gateway_domains ${gateway_domains} \
   --github_ssh_secret ${github_ssh_secret} \
-  --karpenter_enabled ${karpenter_enabled} \
-  --karpenter_instance_profile ${karpenter_instance_profile} \
-  --karpenter_replicas ${karpenter_replicas} \
-  --karpenter_service_account_role_arn ${karpenter_service_account_role_arn} \
-  --karpenter_version ${karpenter_version} \
   --metrics_server_enabled ${metrics_server_enabled} \
   --org ${org} \
   --pod_identity_webhook_enabled ${pod_identity_webhook_enabled} \
@@ -82,5 +78,4 @@ chmod +x create_secrets.sh
   --region ${region} \
   --app_secret_name ${app_secret_name} \
   --beantown_secret_name ${beantown_secret_name} \
-  --database_secret_name ${database_secret_name} \
-  --contact_api_secret_name ${contact_api_secret_name}
+  --database_secret_name ${database_secret_name}

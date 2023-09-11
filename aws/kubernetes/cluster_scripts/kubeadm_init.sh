@@ -245,22 +245,6 @@ EOF
 
 kubectl apply -f - <<EOF
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: system:node:ip-10-6-49-0.us-east-2.compute.internal
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: User
-  name: system:node:ip-10-6-49-0.us-east-2.compute.internal
-EOF
-
-
-kubectl apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: node-api-access

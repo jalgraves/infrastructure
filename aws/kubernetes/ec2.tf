@@ -13,9 +13,9 @@ locals {
 
   template_vars = {
     anonymous_auth_enabled                = local.configs.k8s.anonymous_auth_enabled
-    app_secret_name                       = aws_secretsmanager_secret.app_creds.name
+    app_secret_name                       = aws_secretsmanager_secret.secrets["app-creds"].name
     api_port                              = var.api_port
-    argocd_enabled                        = local.configs.k8s.argocd_enabled
+    argocd_enabled                        = local.configs.argocd.enabled
     asg_name                              = aws_autoscaling_group.kubernetes_cluster_autoscaler.name
     automated_user                        = var.automated_user
     availability_zones                    = join(",", data.tfe_outputs.vpc.values.subnets.availability_zones)
@@ -26,8 +26,7 @@ locals {
     aws_load_balancer_controller_enabled  = local.configs.aws_load_balancer_controller.enabled
     aws_load_balancer_controller_replicas = local.configs.aws_load_balancer_controller.replicas
     aws_secret_access_key                 = aws_iam_access_key.kubernetes_cluster_autoscaler.secret
-    beantown_secret_name                  = aws_secretsmanager_secret.beantown_creds.name
-    contact_api_secret_name               = aws_secretsmanager_secret.contact_api_creds.name
+    beantown_secret_name                  = aws_secretsmanager_secret.secrets["beantown-creds"].name
     cert_arns                             = join(",", local.cert_arns)
     cert_manager_enabled                  = local.configs.k8s.cert_manager_enabled
     cgroup_driver                         = local.configs.k8s.cgroup_driver
@@ -39,18 +38,12 @@ locals {
     cluster_domain                        = var.cluster_domain
     cluster_name                          = local.configs.cluster_name
     control_plane_endpoint                = var.control_plane_endpoint
-    database_secret_name                  = aws_secretsmanager_secret.database_creds.name
+    database_secret_name                  = aws_secretsmanager_secret.secrets["database-creds"].name
     ebs_csi_driver_enabled                = local.configs.k8s.ebs_csi_driver_enabled
     env                                   = local.configs.env
     external_dns_enabled                  = local.configs.k8s.external_dns_enabled
     gateway_domains                       = join(",", var.gateway_domains)
     github_ssh_secret                     = var.github_ssh_secret
-    istio_enabled                         = local.configs.k8s.istio_enabled
-    karpenter_enabled                     = local.configs.karpenter.enabled
-    karpenter_instance_profile            = module.iam.karpenter.instance_profile.name
-    karpenter_replicas                    = local.configs.karpenter.replicas
-    karpenter_service_account_role_arn    = module.iam.karpenter.role.arn
-    karpenter_version                     = local.configs.karpenter.version
     kubelet_authorization_mode            = local.configs.k8s.kubelet_authorization_mode
     kubelet_tls_bootstrap_enabled         = local.configs.k8s.kubelet_tls_bootstrap_enabled
     kubernetes_version                    = local.configs.k8s.version
@@ -85,7 +78,7 @@ data "aws_ami" "amazon_linux_2" {
 
 resource "aws_key_pair" "k8s_cluster" {
   key_name   = "${local.configs.env}-${local.configs.region_code}-k8s-cluster-key-pair"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGkkKlhgtzhJob2Q67MSjpV0L1rmmnkay05IS1KUm2Hp"
+  public_key = var.k8s_cluster_public_key
 }
 
 resource "aws_instance" "k8s_control_plane" {
@@ -94,9 +87,9 @@ resource "aws_instance" "k8s_control_plane" {
   user_data                   = local.k8s_control_plane_user_data
   iam_instance_profile        = module.iam.k8s_control_plane.instance_profile.name
   associate_public_ip_address = false
-  #key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
-  key_name = aws_key_pair.k8s_cluster.id
-  subnet_id                   = data.tfe_outputs.vpc.values.subnets.private.ids[0]
+  key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
+  #key_name = aws_key_pair.k8s_cluster.id
+  subnet_id = data.tfe_outputs.vpc.values.subnets.private.ids[0]
   vpc_security_group_ids = [
     aws_security_group.internal_traffic.id,
     aws_security_group.k8s_control_plane.id,
