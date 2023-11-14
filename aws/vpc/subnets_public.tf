@@ -1,4 +1,6 @@
-
+# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
+# |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
+# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 resource "aws_subnet" "public" {
   count                                          = length(local.configs.availability_zones)
