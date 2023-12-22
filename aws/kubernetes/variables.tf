@@ -20,6 +20,7 @@ variable "db_pass" {}
 variable "db_admin_user" {}
 variable "db_admin_pass" {}
 variable "contact_api_db_name" {}
+variable "content_api_db_name" {}
 variable "merch_api_db_name" {}
 variable "ssh_public_key" {}
 variable "k8s_cluster_public_key" {}
@@ -60,5 +61,7 @@ variable "menu_api_host" {}
 variable "menu_api_port" {}
 variable "contact_api_host" {}
 variable "contact_api_port" {}
+variable "content_api_host" {}
+variable "content_api_port" {}
 variable "users_api_host" {}
 variable "users_api_port" {}

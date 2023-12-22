@@ -14,7 +14,7 @@ module "configs" {
 locals {
   configs           = module.configs.values
   config_path       = "aws/${local.configs.directory}/modules/workspace_configs"
-  terraform_version = "1.5.3"
+  terraform_version = "1.6.6"
 }
 
 resource "tfe_workspace" "this" {
@@ -27,7 +27,6 @@ resource "tfe_workspace" "this" {
   name                  = "${local.configs.env}-aws-${local.configs.directory}-${each.value}"
   description           = "Workspace for ${local.configs.env} AWS ${upper(local.configs.directory)} resources. Created via Terraform workspace ${terraform.workspace}"
   organization          = var.organization
-  execution_mode        = local.configs.execution_mode
   file_triggers_enabled = local.configs.file_triggers_enabled
   global_remote_state   = local.configs.global_remote_state
   queue_all_runs        = local.configs.queue_all_runs
@@ -44,6 +43,15 @@ resource "tfe_workspace" "this" {
   }
 }
 
+resource "tfe_workspace_settings" "this" {
+  for_each = {
+    for k, v in toset(local.configs.region_codes) : k => v
+    if length(local.configs.region_codes) > 0
+  }
+  workspace_id   = tfe_workspace.this[each.key].id
+  execution_mode = local.configs.execution_mode
+}
+
 resource "tfe_notification_configuration" "this" {
   for_each = {
     for k, v in toset(local.configs.region_codes) : k => v
@@ -55,4 +63,28 @@ resource "tfe_notification_configuration" "this" {
   triggers         = ["run:errored", "run:needs_attention", "run:completed"]
   url              = var.slack_webhook_url
   workspace_id     = tfe_workspace.this[each.value].id
+}
+
+resource "tfe_workspace" "global" {
+  count                 = length(local.configs.region_codes) == 0 ? 1 : 0
+  assessments_enabled   = local.configs.assessments_enabled
+  auto_apply            = local.configs.auto_apply
+  name                  = "${local.configs.env}-aws-${local.configs.directory}"
+  description           = "Workspace for ${local.configs.env} AWS ${upper(local.configs.directory)} resources. Created via Terraform workspace ${terraform.workspace}"
+  organization          = var.organization
+  execution_mode        = local.configs.execution_mode
+  file_triggers_enabled = true
+  global_remote_state   = local.configs.global_remote_state
+  queue_all_runs        = local.configs.queue_all_runs
+  speculative_enabled   = true
+  tag_names             = [local.configs.env, "aws", local.configs.directory]
+  terraform_version     = local.terraform_version
+  trigger_patterns      = local.configs.trigger_patterns
+  working_directory     = "aws/${local.configs.directory}"
+  vcs_repo {
+    branch             = local.configs.branch
+    identifier         = "${var.organization}/infrastructure"
+    ingress_submodules = false
+    oauth_token_id     = var.oauth_token_id
+  }
 }

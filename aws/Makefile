@@ -67,8 +67,9 @@ aws/workspace/list: aws/init
 		terraform workspace list
 
 ## Run terraform providers lock on aws directory
-aws/lock: aws/init
-	cd aws/$(directory) && \
+aws/lock/%:
+	cd aws/$(@F) && \
+		terraform init -upgrade=$(upgrade) && \
 		terraform providers lock -platform=darwin_amd64 -platform=linux_amd64
 
 ## List resources in terraform state. Example: make aws/state/list directory=eks env=load

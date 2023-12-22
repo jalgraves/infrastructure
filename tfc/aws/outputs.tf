@@ -10,6 +10,16 @@ output "workspace_ids" {
   }
 }
 
+output "global_workspaces" {
+  value = length(local.configs.region_codes) == 0 ? {
+    for workspace in tfe_workspace.global[*] : workspace.name => {
+      id                = workspace.id
+      project_id        = workspace.project_id
+      terraform_version = workspace.terraform_version
+    }
+  } : {}
+}
+
 output "domain_name" {
   value     = var.domain_name
   sensitive = true

@@ -3,7 +3,7 @@ version: 2.1
 executors:
   terraform:
     docker:
-      - image: docker.mirror.hashicorp.services/hashicorp/terraform:1.5.3
+      - image: docker.mirror.hashicorp.services/hashicorp/terraform:1.6.6
 
 commands:
   terraform_creds:

@@ -70,14 +70,14 @@ resource "aws_s3_object" "helm_install" {
   ]
 }
 
-resource "aws_s3_object" "create_secrets" {
-  bucket = aws_s3_bucket.cluster_scripts.id
-  key    = "create_secrets.sh"
-  source = "${path.module}/cluster_scripts/create_secrets.sh"
-  etag   = filemd5("${path.module}/cluster_scripts/create_secrets.sh")
-  depends_on = [
-    aws_s3_bucket_acl.cluster_scripts,
-    aws_s3_bucket_public_access_block.cluster_scripts,
-    aws_s3_bucket_policy.cluster_scripts
-  ]
-}
+# resource "aws_s3_object" "create_secrets" {
+#   bucket = aws_s3_bucket.cluster_scripts.id
+#   key    = "create_secrets.sh"
+#   source = "${path.module}/cluster_scripts/create_secrets.sh"
+#   etag   = filemd5("${path.module}/cluster_scripts/create_secrets.sh")
+#   depends_on = [
+#     aws_s3_bucket_acl.cluster_scripts,
+#     aws_s3_bucket_public_access_block.cluster_scripts,
+#     aws_s3_bucket_policy.cluster_scripts
+#   ]
+# }

@@ -82,7 +82,8 @@ resource "aws_key_pair" "k8s_cluster" {
 }
 
 resource "aws_instance" "k8s_control_plane" {
-  ami                         = data.aws_ami.amazon_linux_2.id
+  # ami                         = data.aws_ami.amazon_linux_2.id
+  ami                         = "ami-071807f4c8241ac3f"
   instance_type               = local.configs.ec2.instance_type
   user_data                   = local.k8s_control_plane_user_data
   iam_instance_profile        = module.iam.k8s_control_plane.instance_profile.name

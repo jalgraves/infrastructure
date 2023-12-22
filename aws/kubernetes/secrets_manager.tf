@@ -43,7 +43,7 @@ locals {
     },
     {
       name        = "thehubpub-creds"
-      description = "Credentials and secrets for beantown frontend. Created via Terraform workspace ${terraform.workspace}"
+      description = "Credentials and secrets for the hub pub frontend. Created via Terraform workspace ${terraform.workspace}"
       secrets = {
         api_user         = var.api_user
         api_pass         = var.api_pass
@@ -55,6 +55,18 @@ locals {
         contact_api_port = var.contact_api_port
         users_api_host   = var.users_api_host
         users_api_port   = var.users_api_port
+      }
+    },
+    {
+      name        = "jalgraves-creds"
+      description = "Credentials and secrets for jalgraves frontend. Created via Terraform workspace ${terraform.workspace}"
+      secrets = {
+        api_user         = var.api_user
+        api_pass         = var.api_pass
+        content_api_host = var.content_api_host
+        content_api_port = var.content_api_port
+        contact_api_host = var.contact_api_host
+        contact_api_port = var.contact_api_port
       }
     },
     {
@@ -85,6 +97,7 @@ locals {
       name        = "database-creds"
       description = "Database credentials for Postgresql DB. Created via Terraform workspace ${terraform.workspace}"
       secrets = {
+        content_db_name = var.content_api_db_name
         contact_db_name = var.contact_api_db_name
         db_admin_pass   = var.db_admin_pass
         db_admin_user   = var.db_admin_user
@@ -100,6 +113,19 @@ locals {
       description = "Secrets for menu-api. Created via Terraform workspace ${terraform.workspace}"
       secrets = {
         db_name      = var.menu_api_db_name
+        api_username = var.api_user
+        api_password = var.api_pass
+        db_host      = var.db_host
+        db_pass      = var.db_pass
+        db_port      = var.db_port
+        db_user      = var.db_user
+      }
+    },
+    {
+      name        = "content-api-creds"
+      description = "Secrets for content-api. Created via Terraform workspace ${terraform.workspace}"
+      secrets = {
+        db_name      = var.content_api_db_name
         api_username = var.api_user
         api_password = var.api_pass
         db_host      = var.db_host

@@ -7,7 +7,22 @@
 
 locals {
   workspaces = {
-
+    admin-aws-iam-identity-provider-tfc = {
+      assessments_enabled   = true
+      auto_apply            = true
+      branch                = "master"
+      directory             = "iam-identity-provider"
+      env                   = "admin"
+      execution_mode        = "local"
+      file_triggers_enabled = true
+      queue_all_runs        = false
+      region_codes          = []
+      speculative_enabled   = true
+      trigger_patterns      = ["aws/iam-identity-provider/*.tf"]
+      use_tfc               = true
+      use_vault             = true
+      global_remote_state   = false
+    }
     #### DEVELOPMENT WORKSPACES ####
     development-aws-ecr-tfc = {
       assessments_enabled   = true

@@ -27,6 +27,10 @@ locals {
       role = "${title(var.env)}${title(var.region_code)}ContactAPI"
     },
     {
+      name = "content-api"
+      role = "${title(var.env)}${title(var.region_code)}ContentAPI"
+    },
+    {
       name = "menu-api"
       role = "${title(var.env)}${title(var.region_code)}MenuAPI"
     },
