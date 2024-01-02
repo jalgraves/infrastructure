@@ -20,9 +20,7 @@ terraform {
 }
 
 provider "aws" {
-  region     = local.configs.region
-  access_key = "AKIARUG753VYUZM7HW4I"
-  secret_key = "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"
+  region = local.configs.region
   default_tags {
     tags = {
       Environment        = local.configs.env

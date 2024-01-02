@@ -31,6 +31,10 @@ locals {
       role = "${title(var.env)}${title(var.region_code)}ContentAPI"
     },
     {
+      name = "jalgraves"
+      role = "${title(var.env)}${title(var.region_code)}JalGraves"
+    },
+    {
       name = "menu-api"
       role = "${title(var.env)}${title(var.region_code)}MenuAPI"
     },
