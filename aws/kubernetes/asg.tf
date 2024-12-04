@@ -4,7 +4,7 @@
 
 resource "aws_iam_user" "kubernetes_cluster_autoscaler" {
   # Automated user for kubernetes cluster autoscaler
-  name = "kubernetes-cluster-autoscaler"
+  name = "${local.configs.env}-${local.configs.region_code}-k8s-cas"
   path = "/system/"
 }
 
@@ -72,14 +72,17 @@ locals {
 resource "aws_launch_template" "kubernetes_cluster_autoscaler" {
   ebs_optimized = true
   image_id      = data.aws_ami.worker_node.id
-  key_name      = data.tfe_outputs.vpc.values.tailscale.key_pair.name
+  key_name      = local.configs.tailscale.enabled ? data.tfe_outputs.vpc.values.tailscale.key_pair.name : aws_key_pair.k8s_cluster.id
   name_prefix   = "${local.configs.cluster_name}-k8s-ca-"
   user_data     = base64encode(local.join_user_data)
   #instance_type = "t3.medium"
-  vpc_security_group_ids = [
+  vpc_security_group_ids = local.configs.tailscale.enabled ? [
     aws_security_group.internal_traffic.id,
     aws_security_group.k8s_control_plane.id,
     data.tfe_outputs.vpc.values.tailscale.security_group.id
+    ] : [
+    aws_security_group.internal_traffic.id,
+    aws_security_group.k8s_control_plane.id
   ]
   tags = {
     Name = "${local.configs.cluster_name}-k8s-ca"

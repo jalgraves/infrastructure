@@ -10,19 +10,18 @@ packer {
 data "amazon-ami" "this" {
   filters = {
     virtualization-type = "hvm"
-    name                = "amzn2-ami-kernel-5.10-hvm-2.0.*-x86_64-gp2"
-    name                = "amzn2-ami-hvm-2.0.*-x86_64-gp2"
+    name                = "amzn2-ami-hvm-*-x86_64-gp2"
     root-device-type    = "ebs"
   }
-  owners      = ["amazon"]
+  owners      = ["137112412989"]
   most_recent = true
-  region      = "us-east-2"
+  region      = "us-east-1"
 }
 
 source "amazon-ebs" "k8s-worker" {
-  ami_name             = "production_use2_k8s_worker {{timestamp}}"
+  ami_name             = "production_use1_k8s_worker {{timestamp}}"
   instance_type        = "t2.micro"
-  region               = "us-east-2"
+  region               = "us-east-1"
   source_ami           = data.amazon-ami.this.id
   ssh_username         = "ec2-user"
   ssh_interface        = "public_ip"

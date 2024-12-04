@@ -43,6 +43,13 @@ resource "aws_security_group" "k8s_control_plane" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    description = "Allow from work office. Created via Terraform workspace ${terraform.workspace}"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["50.231.13.130/32"]
+  }
   tags = {
     Name                                           = "${local.configs.cluster_name}-k8s-control-plane"
     "k8s.io/cluster/${local.configs.cluster_name}" = "owned"

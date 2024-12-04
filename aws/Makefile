@@ -19,38 +19,39 @@ aws/init/%:
 aws/plan/%:
 	cd aws/$(@F) && \
 		terraform workspace select $(aws_workspace) && \
-		aws-vault exec beantown:dev -- terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
+		terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform plan on specific resource in aws an directory
 aws/plan/target: aws/workspace
 	cd aws/$(directory) && \
-		aws-vault exec beantown:dev -- terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
+		aws-vault exec beanbot -- terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
 
 ## Run terraform apply on aws directory
 aws/apply/%:
 	cd aws/$(@F) && \
 		terraform workspace select $(aws_workspace) && \
-		aws-vault exec beantown:dev -- terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
+		terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform apply on specific resource in an aws directory
 aws/apply/target: aws/workspace
 	cd aws/$(directory) && \
-		aws-vault exec beantown:dev -- terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
+		aws-vault exec beanbot -- terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
 
 ## Run terraform destroy on aws directory
-aws/destroy: aws/workspace
-	cd aws/$(directory) && \
-		aws-vault exec beantown:dev -- terraform destroy -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
+aws/destroy/%:
+	cd aws/$(@F) && \
+		terraform workspace select $(aws_workspace) && \
+		terraform destroy -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform destroy on specific resource in an aws directory
 aws/destroy/target: aws/workspace
 	cd aws/$(directory) && \
-		aws-vault exec beantown:dev -- terraform destroy -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
+		aws-vault exec beanbot -- terraform destroy -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -target=$(target)
 
 ## Run terraform taint on specific resource in an aws directory
 aws/taint: aws/workspace
 	cd aws/$(directory) && \
-		aws-vault exec beantown:dev -- terraform taint $(target)
+		aws-vault exec beanbot -- terraform taint $(target)
 
 ## Run terraform destroy on aws directory
 aws/validate: aws/workspace

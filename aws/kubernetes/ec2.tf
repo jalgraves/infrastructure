@@ -18,7 +18,7 @@ locals {
     argocd_enabled                        = local.configs.argocd.enabled
     asg_name                              = aws_autoscaling_group.kubernetes_cluster_autoscaler.name
     automated_user                        = var.automated_user
-    availability_zones                    = join(",", data.tfe_outputs.vpc.values.subnets.availability_zones)
+    availability_zones                    = join(",", keys(data.tfe_outputs.vpc.values.availability_zones))
     aws_access_key_id                     = aws_iam_access_key.kubernetes_cluster_autoscaler.id,
     aws_account_id                        = data.aws_caller_identity.current.account_id
     aws_external_dns_enabled              = local.configs.aws_external_dns.enabled
@@ -83,18 +83,20 @@ resource "aws_key_pair" "k8s_cluster" {
 
 resource "aws_instance" "k8s_control_plane" {
   # ami                         = data.aws_ami.amazon_linux_2.id
-  ami                         = "ami-071807f4c8241ac3f"
+  ami                         = "ami-0db71aead192f4001"
   instance_type               = local.configs.ec2.instance_type
   user_data                   = local.k8s_control_plane_user_data
   iam_instance_profile        = module.iam.k8s_control_plane.instance_profile.name
-  associate_public_ip_address = false
-  key_name                    = data.tfe_outputs.vpc.values.tailscale.key_pair.name
-  #key_name = aws_key_pair.k8s_cluster.id
-  subnet_id = data.tfe_outputs.vpc.values.subnets.private.ids[0]
-  vpc_security_group_ids = [
+  associate_public_ip_address = local.configs.k8s.subnet == "public" ? true : false
+  key_name                    = local.configs.tailscale.enabled ? data.tfe_outputs.vpc.values.tailscale.key_pair.name : aws_key_pair.k8s_cluster.id
+  subnet_id                   = local.configs.k8s.subnet == "private" ? data.tfe_outputs.vpc.values.subnets.private.ids[0] : data.tfe_outputs.vpc.values.subnets.public.ids[0]
+  vpc_security_group_ids = local.configs.tailscale.enabled ? [
     aws_security_group.internal_traffic.id,
     aws_security_group.k8s_control_plane.id,
     data.tfe_outputs.vpc.values.tailscale.security_group.id
+    ] : [
+    aws_security_group.internal_traffic.id,
+    aws_security_group.k8s_control_plane.id
   ]
   tags = {
     "Name"                                                = "${local.configs.cluster_name}-k8s-control-plane"

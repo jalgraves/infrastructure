@@ -8,6 +8,7 @@ locals {
   workspaces = {
     development-aws-kubernetes-use2 = local.development-aws-kubernetes-use2
     #development-aws-kubernetes-use1 = local.development-aws-kubernetes-use1
+    production-aws-kubernetes-use1 = local.production-aws-kubernetes-use1
     production-aws-kubernetes-use2 = local.production-aws-kubernetes-use2
   }
 }

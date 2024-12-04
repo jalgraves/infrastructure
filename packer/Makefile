@@ -9,4 +9,4 @@ org ?= beantown
 packer/k8s_worker/build:
 	cd packer/ && \
 	packer init k8s-worker-ami-template.pkr.hcl && \
-	aws-vault exec $(org):dev -- packer build k8s-worker-ami-template.pkr.hcl
+	packer build k8s-worker-ami-template.pkr.hcl

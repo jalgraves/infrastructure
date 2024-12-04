@@ -3,7 +3,7 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  production-aws-kubernetes-use2 = {
+  production-aws-kubernetes-use1 = {
     aws_external_dns = {
       enabled  = true
       replicas = 1
@@ -19,7 +19,7 @@ locals {
       version = "1.13.0"
       cidr    = "10.96.0.0/12"
     }
-    cluster_name = "production-use2"
+    cluster_name = "production-use1"
     ec2 = {
       instance_type = "t3.medium"
     }
@@ -37,13 +37,13 @@ locals {
       kubelet_tls_bootstrap_enabled = true
       metrics_server_enabled        = true
       pod_identity_webhook_enabled  = true
-      version                       = "1.28.0"
-      subnet                        = "private"
+      version                       = "1.31.0"
+      subnet                        = "public"
     }
-    region      = "us-east-2"
-    region_code = "use2"
+    region      = "us-east-1"
+    region_code = "use1"
     tailscale = {
-      enabled = true
+      enabled = false
     }
   }
 }

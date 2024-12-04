@@ -99,11 +99,12 @@ resource "aws_s3_object" "oidc_jwks" {
 }
 
 data "tls_certificate" "this" {
-  url = "https://${aws_s3_bucket.oidc.bucket_regional_domain_name}"
+  #url = "https://${aws_s3_bucket.oidc.bucket_regional_domain_name}"
+  url = "https://beantownpub-production-use1-oidc.s3.amazonaws.com/jwks.json"
 }
 
 locals {
-  cert = data.tls_certificate.this.certificates[index(data.tls_certificate.this.certificates[*].subject, "CN=*.s3.${data.aws_region.current.id}.amazonaws.com")]
+  cert = data.tls_certificate.this.certificates[index(data.tls_certificate.this.certificates[*].subject, "CN=*.s3.amazonaws.com")]
 }
 
 resource "aws_iam_openid_connect_provider" "irsa" {

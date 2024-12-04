@@ -1,6 +1,7 @@
 output "k8s_control_plane" {
   value = {
     private_ip = aws_instance.k8s_control_plane.private_ip
+    public_ip  = local.configs.k8s.subnet == "public" ? aws_instance.k8s_control_plane.public_ip : null
     role = {
       arn = module.iam.k8s_control_plane.role.arn
     }

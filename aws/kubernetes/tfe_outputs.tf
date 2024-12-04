@@ -16,7 +16,7 @@ data "tfe_outputs" "vpc" {
 data "tfe_outputs" "certs" {
   count        = local.configs.env == "production" ? 1 : 0
   organization = "jalgraves"
-  workspace    = "development-aws-route53-${local.configs.region_code}"
+  workspace    = "${local.configs.env}-aws-route53-${local.configs.region_code}"
 }
 
 data "tfe_outputs" "route53" {

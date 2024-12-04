@@ -4,7 +4,7 @@
 
 resource "aws_iam_user" "ses_sender" {
   # Automated user for sending SES emails
-  name = "ses-sender"
+  name = "${local.configs.cluster_name}-ses-sender"
   path = "/system/"
 }
 

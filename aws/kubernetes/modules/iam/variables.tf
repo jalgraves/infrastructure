@@ -15,7 +15,6 @@ variable "env" {
   EOT
 }
 variable "oidc" {
-  type        = object(map(string))
   description = <<EOT
     The OIDC issuer and provider ARN. These values come from the `irsa` module
   EOT
