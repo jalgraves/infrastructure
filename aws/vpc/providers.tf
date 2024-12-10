@@ -8,22 +8,17 @@ terraform {
     # Provider versions are pinned to avoid unexpected upgrades
     aws = {
       source  = "hashicorp/aws"
-      version = "5.9.0"
+      version = "5.80.0"
     }
   }
-  cloud {
-    organization = "jalgraves"
-    workspaces {
-      tags = ["aws", "vpc"]
-    }
-  }
+  backend "s3" {}
 }
 
 provider "aws" {
   region = local.configs.region
   default_tags {
     tags = {
-      Environment        = local.configs.env
+      Environment        = local.configs.environment
       Provisioner        = "terraform"
       RegionCode         = local.configs.region_code
       TerraformWorkspace = terraform.workspace

@@ -5,21 +5,27 @@ SHELL := /bin/bash
 .ONESHELL:
 
 upgrade ?= false
-region_code ?= use2
+region_code ?= use1
 directory ?= $(@F)
 aws_workspace ?= $(env)-aws-$(directory)-$(region_code)
 org ?= jalgraves
+aws_profile ?= $(org)-$(env)-$(region_code)
+refresh_only ?= false
 
 ## Run terraform init on aws directory
 aws/init/%:
 	cd aws/$(@F) && \
-		terraform init -upgrade=$(upgrade)
+		export AWS_DEFAULT_PROFILE=$(aws_profile) && \
+		export TF_WORKSPACE=$(aws_workspace) && \
+		terraform init -backend-config="workspaces/$(aws_workspace).hcl" -reconfigure -upgrade=$(upgrade)
 
 ## Run terraform plan on aws directory
 aws/plan/%:
 	cd aws/$(@F) && \
-		terraform workspace select $(aws_workspace) && \
-		terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
+		export AWS_DEFAULT_PROFILE=$(aws_profile) && \
+		export TF_CLI_ARGS_plan="-compact-warnings" && \
+		export TF_WORKSPACE=$(aws_workspace) && \
+		terraform plan -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -refresh-only=$(refresh_only)
 
 ## Run terraform plan on specific resource in aws an directory
 aws/plan/target: aws/workspace
@@ -29,8 +35,9 @@ aws/plan/target: aws/workspace
 ## Run terraform apply on aws directory
 aws/apply/%:
 	cd aws/$(@F) && \
-		terraform workspace select $(aws_workspace) && \
-		terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
+		export AWS_DEFAULT_PROFILE=$(aws_profile) && \
+		export TF_WORKSPACE=$(aws_workspace) && \
+		terraform apply -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars" -refresh-only=$(refresh_only)
 
 ## Run terraform apply on specific resource in an aws directory
 aws/apply/target: aws/workspace
@@ -40,7 +47,8 @@ aws/apply/target: aws/workspace
 ## Run terraform destroy on aws directory
 aws/destroy/%:
 	cd aws/$(@F) && \
-		terraform workspace select $(aws_workspace) && \
+		export AWS_DEFAULT_PROFILE=$(aws_profile) && \
+		export TF_WORKSPACE=$(aws_workspace) && \
 		terraform destroy -var-file="${HOME}/tfvars/$(org)/$(directory).tfvars"
 
 ## Run terraform destroy on specific resource in an aws directory

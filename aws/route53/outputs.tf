@@ -3,33 +3,47 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 output "acm" {
+  # Certificate output is exported for other Terraform workspaces to consume.
   value = {
     certificates = {
-      env = {
-        arn = aws_acm_certificate.env.arn
+      for cert in module.acm : cert.certificate.name => {
+        arn = cert.certificate.arn
       }
-      client_domain_arns = local.configs.env == "development" ? [
-        for domain in var.client_domains : aws_acm_certificate.client_domains[domain].arn
-      ] : []
-      client_domains = local.configs.env == "development" ? {
-        for domain in var.client_domains : domain => {
-          arn = aws_acm_certificate.client_domains[domain].arn
-        }
-      } : {}
     }
   }
 }
 
-output "route53" {
+output "parent_zones" {
+  value = local.dns
+}
+
+output "dns" {
+  description = <<EOF
+    These outputs are used by other workspaces to create DNS records for the
+    resources they're managing. For example each ec2 workspace uses the outputs
+    from the zones created to pass the domains to exteranl-dns so DNS records
+    can automatically be created to point at our apps running in K8s clusters.
+  EOF
   value = {
     zones = {
-      aws    = data.aws_route53_zone.aws
-      env    = aws_route53_zone.env
-      region = aws_route53_zone.region
+      # These zones are used by other Terraform workspaces when creating DNS records
+      # for specific AWS resources like a database or Redis cache
+      for zone in aws_route53_zone.this : zone.name => {
+        arn          = zone.arn
+        name_servers = zone.name_servers
+        id           = zone.id
+        parent_zone = {
+          name = local.dns[zone.name].parent_zone
+          id   = aws_route53_zone.this[local.dns[zone.name].parent_zone].id
+        }
+      }
     }
     records = {
-      env    = aws_route53_record.env
-      region = aws_route53_record.region
+      for record in aws_route53_record.nameservers : record.name => {
+        id           = record.id
+        name_servers = record.records
+        zone_id      = record.zone_id
+      }
     }
   }
 }

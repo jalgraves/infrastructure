@@ -37,7 +37,7 @@ locals {
       kubelet_tls_bootstrap_enabled = true
       metrics_server_enabled        = true
       pod_identity_webhook_enabled  = true
-      version                       = "1.31.0"
+      version                       = "1.32.0"
       subnet                        = "public"
     }
     region      = "us-east-1"
