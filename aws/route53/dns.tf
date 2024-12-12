@@ -35,7 +35,7 @@ resource "aws_route53_record" "nameservers" {
     for zone in keys(local.configs.dns.zones) : zone => zone
     if length(split(".", zone)) > 2
   }
-  zone_id = aws_route53_zone.this[local.dns[each.value].parent_zone].zone_id
+  zone_id = aws_route53_zone.this[try(local.configs.dns.zones[each.value].parent_zone, local.dns[each.value].parent_zone)].zone_id
 
   name    = each.value
   type    = "NS"

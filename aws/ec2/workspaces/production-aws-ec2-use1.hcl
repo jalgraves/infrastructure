@@ -1,3 +1,3 @@
-key    = "route53/production-use1.tfstate"
+key    = "ec2/production-use1.tfstate"
 bucket = "production-use1-terraform-remote-state-dumtgvbb"
 region = "us-east-1"

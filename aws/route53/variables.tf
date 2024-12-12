@@ -3,4 +3,4 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 # variable "client_domains" { default = [] }
-# variable "ns1_api_key" {}
+variable "ns1_api_key" {}

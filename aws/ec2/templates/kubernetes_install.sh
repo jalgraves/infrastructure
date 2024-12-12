@@ -192,3 +192,15 @@ done
 
 kubectl create namespace ${environment}
 kubectl label namespace ${environment} istio-injection=enabled
+
+NODE=$(kubectl get nodes -o custom-columns=NAME:metadata.name --no-headers)
+kubectl label node "$NODE" role=istio
+
+helm upgrade cilium cilium/cilium --install \
+  --version "1.13.0" \
+  --namespace kube-system --reuse-values \
+  --set hubble.relay.enabled=false \
+  --set hubble.ui.enabled=false \
+  --set operator.replicas=1 \
+  --set debug.enabled=true \
+  --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="10.96.0.0/12"

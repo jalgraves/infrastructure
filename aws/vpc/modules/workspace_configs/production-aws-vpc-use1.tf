@@ -2,11 +2,11 @@
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
-# Configs specific to the workspace development-aws-iam-use1
+# Configs specific to the workspace production-aws-iam-use1
 
 locals {
-  development-aws-vpc-use1 = {
-    environment = "development"
+  production-aws-vpc-use1 = {
+    environment = "production"
     region      = "us-east-1"
     region_code = "use1"
     azs = {
@@ -38,14 +38,14 @@ locals {
     }
     vpc_subnet_tags = {
       public = {
-        "kubernetes.io/cluster/development-use1" = "owned"
-        "kubernetes.io/role/elb"                 = "1"
-        "cpco.io/subnet/type"                    = "public"
+        "kubernetes.io/cluster/production-use1" = "owned"
+        "kubernetes.io/role/elb"                = "1"
+        "cpco.io/subnet/type"                   = "public"
       }
       private = {
-        "kubernetes.io/cluster/development-use1" = "owned"
-        "kubernetes.io/role/internal-elb"        = "1"
-        "cpco.io/subnet/type"                    = "private"
+        "kubernetes.io/cluster/production-use1" = "owned"
+        "kubernetes.io/role/internal-elb"       = "1"
+        "cpco.io/subnet/type"                   = "private"
       }
     }
   }

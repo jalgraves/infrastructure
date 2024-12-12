@@ -2,24 +2,32 @@
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
-# Configs specific to the workspace development-aws-iam-use1
+# Configs specific to the workspace production-aws-iam-use1
 
 locals {
-  development-aws-iam-use1 = {
+  production-aws-iam-use1 = {
     automated_users = {
       external-secrets = {
         create_keys                         = true
-        customer_managed_policy_attachments = ["DevelopmentUse1ExternalSecretsPolicy"]
+        customer_managed_policy_attachments = ["ProductionUse1ExternalSecretsPolicy"]
         managed_policy_attachments          = []
         secret = {
-          name        = "development/use1/external-secrets"
+          name        = "production/use1/external-secrets"
           description = "Secret with credentials for Kubernetes External Secrets. Managed via Terraform workspace ${terraform.workspace}"
+        }
+      }
+      ses-sender-use1 = {
+        create_keys                         = true
+        customer_managed_policy_attachments = ["ProductionUse1SesPolicy"]
+        managed_policy_attachments          = []
+        secret = {
+          name        = "production/use1/ses-sender-use1"
+          description = "Secret with credentials for sending emails. Managed via Terraform workspace ${terraform.workspace}"
         }
       }
     }
     customer_managed_policies = {
-
-      DevelopmentUse1K8sControlPlanePolicy = {
+      ProductionUse1K8sControlPlanePolicy = {
         description = "Permissions policy for Kubernetes control plane nodes. Managed via Terraform workspace ${terraform.workspace}"
         path        = "/"
         statements = [
@@ -119,7 +127,7 @@ locals {
           }
         ]
       }
-      DevelopmentUse1K8sWorkerPolicy = {
+      ProductionUse1K8sWorkerPolicy = {
         description = "Permissions policy for Kubernetes worker nodes. Managed via Terraform workspace ${terraform.workspace}"
         path        = "/"
         statements = [
@@ -148,7 +156,7 @@ locals {
           }
         ]
       }
-      DevelopmentUse1ExternalSecretsPolicy = {
+      ProductionUse1ExternalSecretsPolicy = {
         description = "Permissions policy for Kubernetes External Secrets. Managed via Terraform workspace ${terraform.workspace}"
         path        = "/"
         statements = [
@@ -161,20 +169,41 @@ locals {
             ]
             conditions = []
             resources = [
-              "arn:aws:secretsmanager:us-east-2:*:secret:development/use1/menu-api",
-              "arn:aws:secretsmanager:us-east-2:*:secret:development/use1/contact-api",
-              "arn:aws:secretsmanager:us-east-2:*:secret:development/use1/beantownpub"
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/psql*",
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/menu-api*",
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/contact-api*",
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/ses-sender-use1*",
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/beantown*",
+              "arn:aws:secretsmanager:us-east-1:*:secret:production/use1/thehubpub*"
+            ]
+            effect = "Allow"
+          }
+        ]
+      }
+      ProductionUse1SesPolicy = {
+        description = "Permissions policy for sending email with SES. Managed via Terraform workspace ${terraform.workspace}"
+        path        = "/"
+        statements = [
+          {
+            sid = "SesSender"
+            actions = [
+              "ses:SendRawEmail",
+              "ses:SendEmail"
+            ]
+            conditions = []
+            resources = [
+              "*"
             ]
             effect = "Allow"
           }
         ]
       }
     }
-    environment = "development"
+    environment = "production"
     region      = "us-east-1"
     region_code = "use1"
     roles = {
-      DevelopmentUse1Packer = {
+      ProductionUse1Packer = {
         description             = "Role to allow Packer to build AMIs. Managed via Terraform workspace ${terraform.workspace}"
         create_instance_profile = true
         assume_role = {
@@ -195,7 +224,7 @@ locals {
           "arn:aws:iam::aws:policy/AdministratorAccess"
         ]
       }
-      DevelopmentUse1K8sControlPlane = {
+      ProductionUse1K8sControlPlane = {
         description             = "Role for Kubernetes control plane. Managed via Terraform workspace ${terraform.workspace}"
         create_instance_profile = true
         assume_role = {
@@ -211,8 +240,8 @@ locals {
           ]
         }
         customer_managed_policy_attachments = [
-          "DevelopmentUse1K8sControlPlanePolicy",
-          "DevelopmentUse1K8sWorkerPolicy"
+          "ProductionUse1K8sControlPlanePolicy",
+          "ProductionUse1K8sWorkerPolicy"
         ]
         managed_policy_attachments = []
       }
