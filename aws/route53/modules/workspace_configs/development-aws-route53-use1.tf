@@ -8,6 +8,7 @@ locals {
       certificates = {
         "development.use1.jalgraves.com" = {
           label                     = "jalgraves-development-use1"
+          ns1_hosted_domain         = false
           subject_alternative_names = ["*.development.use1.jalgraves.com"]
         }
       }

@@ -15,7 +15,7 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "this" {
-  for_each = {
+  for_each = var.ns1_hosted_domain ? {} : {
     for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {
       name    = dvo.resource_record_name
       record  = dvo.resource_record_value
@@ -33,6 +33,24 @@ resource "aws_route53_record" "this" {
 }
 
 resource "aws_acm_certificate_validation" "this" {
+  count                   = var.ns1_hosted_domain ? 0 : 1
   certificate_arn         = aws_acm_certificate.this.arn
   validation_record_fqdns = [for domain in var.subject_alternative_names : aws_route53_record.this[domain].fqdn]
+}
+
+module "ns1" {
+  source  = "app.terraform.io/beantown/ns1/aws"
+  version = "0.1.1"
+
+  for_each = var.ns1_hosted_domain ? {
+    for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {
+      domain       = dvo.domain_name
+      record_name  = dvo.resource_record_name
+      record_value = dvo.resource_record_value
+    }
+  } : {}
+  ns1_api_key  = var.ns1_api_key
+  cname_record = each.value.record_name
+  cname_target = each.value.record_value
+  dns_zone     = each.value.domain
 }

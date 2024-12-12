@@ -33,8 +33,8 @@ output "dns" {
         name_servers = zone.name_servers
         id           = zone.id
         parent_zone = {
-          name = local.dns[zone.name].parent_zone
-          id   = aws_route53_zone.this[local.dns[zone.name].parent_zone].id
+          name = try(local.dns[zone.name].parent_zone, null)
+          id   = aws_route53_zone.this[try(local.configs.dns.zones[zone.name].parent_zone, local.dns[zone.name].parent_zone)].id
         }
       }
     }
@@ -47,3 +47,7 @@ output "dns" {
     }
   }
 }
+
+# output "debug" {
+#   value = module.acm.debug
+# }

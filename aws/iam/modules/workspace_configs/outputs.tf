@@ -5,6 +5,7 @@
 locals {
   workspaces = {
     development-aws-iam-use1 = local.development-aws-iam-use1
+    production-aws-iam-use1  = local.production-aws-iam-use1
   }
 }
 

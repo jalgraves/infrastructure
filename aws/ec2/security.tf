@@ -40,7 +40,7 @@ resource "aws_security_group" "k8s_control_plane" {
     from_port   = var.control_plane_port
     to_port     = var.control_plane_port
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.control_plane_allowed_ips
   }
   ingress {
     description = "Allow access to control plane from certain IPs. Created via Terraform workspace ${terraform.workspace}"

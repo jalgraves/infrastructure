@@ -2,6 +2,7 @@
 
 export KUBECONFIG=/etc/kubernetes/admin.conf && export PATH=$PATH:/usr/local/bin && \
 alias k='kubectl' && \
+  alias kdel='kubectl delete' && \
   alias kdelp='kubectl delete pod' && \
   alias kd='kubectl describe' && \
   alias kg='kubectl get' && \
@@ -46,4 +47,15 @@ alias k='kubectl' && \
   alias kdpargo='kubectl describe pod -n argocd' && \
   alias kgpargo='kubectl get pods -n argocd' && \
   alias b='base64' && \
-  alias bd='base64 -d'
+  alias bd='base64 -d' && \
+  alias kgpex='kubectl get pods -n external-secrets' && \
+  alias kdelpex='kubectl delete pods -n external-secrets' && \
+  alias kdpex='kubectl describe pods -n external-secrets' && \
+  alias klex='kubectl logs -n external-secrets' && \
+  alias kdelpp='kubectl delete pod -n production' && \
+  alias kdpp='kubectl describe pod -n production' && \
+  alias kgpp='kubectl get pod -n production' && \
+  alias kgsecp='kubectl get secrets -n production' && \
+  alias klp='kubectl logs -n production' && \
+  alias kdelsecp='kubectl delete secrets -n production' && \
+  alias hup='helm uninstall -n production'
