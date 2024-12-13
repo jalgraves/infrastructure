@@ -157,12 +157,13 @@ curl --silent https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-
 helm repo add cilium https://helm.cilium.io/
 helm repo add aws https://aws.github.io/eks-charts
 helm repo add external-dns https://kubernetes-sigs.github.io/external-dns
+helm repo add external-secrets https://charts.external-secrets.io
 
 helm upgrade cilium cilium/cilium --install \
   --version "1.13.0" \
   --namespace kube-system --reuse-values \
-  --set hubble.relay.enabled=true \
-  --set hubble.ui.enabled=true \
+  --set hubble.relay.enabled=false \
+  --set hubble.ui.enabled=false \
   --set operator.replicas=1 \
   --set debug.enabled=true \
   --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="${service_subnet}"
@@ -181,6 +182,11 @@ helm upgrade aws-external-dns external-dns/external-dns \
   --set domainFilters[0]="${external_dns_domain}" \
   --set replicaCount="1"
 
+helm upgrade --install external-secrets external-secrets/ \
+  --namespace external-secrets \
+  --create-namespace \
+  --debug
+
 CSRS=$(kubectl get csr -o custom-columns=NAME:metadata.name --no-headers)
 for csr in $CSRS; do
   status=$(kubectl get csr "$csr" -o json | jq .status.condition)
@@ -195,12 +201,3 @@ kubectl label namespace ${environment} istio-injection=enabled
 
 NODE=$(kubectl get nodes -o custom-columns=NAME:metadata.name --no-headers)
 kubectl label node "$NODE" role=istio
-
-helm upgrade cilium cilium/cilium --install \
-  --version "1.13.0" \
-  --namespace kube-system --reuse-values \
-  --set hubble.relay.enabled=false \
-  --set hubble.ui.enabled=false \
-  --set operator.replicas=1 \
-  --set debug.enabled=true \
-  --set ipam.operator.clusterPoolIPv4PodCIDRList[0]="10.96.0.0/12"

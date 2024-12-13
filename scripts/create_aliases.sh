@@ -58,4 +58,6 @@ alias k='kubectl' && \
   alias kgsecp='kubectl get secrets -n production' && \
   alias klp='kubectl logs -n production' && \
   alias kdelsecp='kubectl delete secrets -n production' && \
-  alias hup='helm uninstall -n production'
+  alias hup='helm uninstall -n production' && \
+  alias kdelpi='kubectl delete pod -n istio-system' && \
+  alias kdn='kubectl describe node'

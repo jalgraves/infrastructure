@@ -2,7 +2,7 @@
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
-# Configs specific to the workspace production-aws-iam-use1
+# Configs specific to the workspace production-aws-ec2-use1
 
 locals {
   production-aws-ec2-use1 = {
@@ -14,6 +14,7 @@ locals {
     remote_bucket_name = "production-use1-terraform-remote-state-dumtgvbb"
     instances = {
       # iam_instance_profile for an instance first needs to be created in the aws/iam directory
+      # usting the production-aws-iam-use1 workspace
       control-plane = {
         associate_public_ip_address = true
         external_dns_domain         = "production.use1.aws.beantownpub.com"
@@ -26,7 +27,7 @@ locals {
           volume_type = "gp3"
         }
         user_data_script            = "kubernetes_install.sh"
-        user_data_replace_on_change = true
+        user_data_replace_on_change = false
       }
     }
   }

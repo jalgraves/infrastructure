@@ -40,14 +40,15 @@ resource "aws_security_group" "k8s_control_plane" {
     from_port   = var.control_plane_port
     to_port     = var.control_plane_port
     protocol    = "tcp"
-    cidr_blocks = var.control_plane_allowed_ips
+    cidr_blocks = concat(var.control_plane_allowed_ips, ["18.234.72.199/32"])
   }
   ingress {
-    description = "Allow access to control plane from certain IPs. Created via Terraform workspace ${terraform.workspace}"
-    from_port   = var.ssh_port
-    to_port     = var.ssh_port
-    protocol    = "tcp"
-    cidr_blocks = var.control_plane_allowed_ips
+    description      = "Allow access to control plane from certain IPs. Created via Terraform workspace ${terraform.workspace}"
+    from_port        = var.ssh_port
+    to_port          = var.ssh_port
+    protocol         = "tcp"
+    cidr_blocks      = var.control_plane_allowed_ips
+    ipv6_cidr_blocks = ["::/0"]
   }
   tags = {
     Name                                           = "${local.configs.cluster_name}-k8s-control-plane"

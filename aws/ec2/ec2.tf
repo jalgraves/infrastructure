@@ -102,7 +102,7 @@ resource "aws_route53_record" "ec2" {
   allow_overwrite = true
   name            = each.key
   records         = [aws_instance.this[each.key].public_ip]
-  ttl             = 600
+  ttl             = 5
   type            = "A"
   zone_id         = data.terraform_remote_state.route53.outputs.dns.zones[local.dns_zones[each.key]].id
 }
@@ -115,7 +115,7 @@ resource "aws_route53_record" "ec2_ipv6" {
   allow_overwrite = true
   name            = each.key
   records         = [aws_instance.this[each.key].ipv6_addresses[0]]
-  ttl             = 600
+  ttl             = 5
   type            = "AAAA"
   zone_id         = data.terraform_remote_state.route53.outputs.dns.zones[local.dns_zones[each.key]].id
 }
