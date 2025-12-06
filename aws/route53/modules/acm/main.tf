@@ -39,8 +39,9 @@ resource "aws_acm_certificate_validation" "this" {
 }
 
 module "ns1" {
-  source  = "app.terraform.io/beantown/ns1/aws"
-  version = "0.1.1"
+  # source  = "app.terraform.io/beantown/ns1/aws"
+  # version = "0.1.1"
+  source = "git::https://github.com/beantownpub/terraform-aws-ns1?ref=f5022ad6c59d4448b9165c30be489c8783619f7e"
 
   for_each = var.ns1_hosted_domain ? {
     for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {

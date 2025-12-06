@@ -1,7 +1,6 @@
 
 -include \
 	aws/Makefile \
-	tfc/Makefile \
 	packer/Makefile
 
 export MAKE_PATH ?= $(shell pwd)
@@ -14,7 +13,6 @@ SHELL := /bin/bash
 MAKE_FILES = \
 	${MAKE_PATH}/Makefile \
 	${MAKE_PATH}/aws/Makefile \
-	${MAKE_PATH}/tfc/Makefile \
 	${MAKE_PATH}/packer/Makefile
 
 default:: $(DEFAULT_HELP_TARGET)

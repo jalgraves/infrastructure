@@ -5,7 +5,7 @@
 locals {
   workspaces = {
     development-aws-route53-use1 = local.development-aws-route53-use1
-    production-aws-route53-use1  = local.production-aws-route53-use1
+    production-use1-route53      = local.production-use1-route53
   }
 }
 

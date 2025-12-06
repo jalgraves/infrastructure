@@ -1,11 +1,10 @@
-# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
+# +-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+ +-+-+-+-+
 # |*|*|*|*| |J|A|L|G|R|A|V|E|S| |*|*|*|*|
-# +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
+# +-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+ +-+-+-+-+
 
 terraform {
   required_version = ">= 1.3.4"
   required_providers {
-    # Provider versions are pinned to avoid unexpected upgrades
     aws = {
       source  = "hashicorp/aws"
       version = "6.24.0"

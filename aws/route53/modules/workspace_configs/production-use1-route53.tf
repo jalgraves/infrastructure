@@ -3,7 +3,7 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  production-aws-route53-use1 = {
+  production-use1-route53 = {
     acm = {
       certificates = {
         "production.use1.aws.beantownpub.com" = {

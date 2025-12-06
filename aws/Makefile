@@ -7,9 +7,9 @@ SHELL := /bin/bash
 upgrade ?= false
 region_code ?= use1
 directory ?= $(@F)
-aws_workspace ?= $(env)-aws-$(directory)-$(region_code)
+aws_workspace ?= $(env)-$(region_code)-$(directory)
 org ?= jalgraves
-aws_profile ?= $(org)-$(env)-$(region_code)
+aws_profile ?= $(org)
 refresh_only ?= false
 
 ## Run terraform init on aws directory
@@ -78,7 +78,9 @@ aws/workspace/list: aws/init
 ## Run terraform providers lock on aws directory
 aws/lock/%:
 	cd aws/$(@F) && \
-		terraform init -upgrade=$(upgrade) && \
+		export AWS_DEFAULT_PROFILE=$(aws_profile) && \
+		export TF_WORKSPACE=$(aws_workspace) && \
+		terraform init -backend-config="workspaces/$(aws_workspace).hcl" -reconfigure -upgrade=true && \
 		terraform providers lock -platform=darwin_amd64 -platform=linux_amd64
 
 ## List resources in terraform state. Example: make aws/state/list directory=eks env=load
