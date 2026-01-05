@@ -82,8 +82,14 @@ resource "aws_ecs_service" "svc" {
   name            = each.key
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.task[each.key].arn
-  launch_type     = "FARGATE"
-  desired_count   = each.value.desired_count
+  #launch_type          = "FARGATE"
+  desired_count        = each.value.desired_count
+  force_new_deployment = true
+
+  capacity_provider_strategy {
+    capacity_provider = each.value.capacity_provider
+    weight            = 1
+  }
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
@@ -102,5 +108,16 @@ resource "aws_ecs_service" "svc" {
 
   service_registries {
     registry_arn = aws_service_discovery_service.svc[each.key].arn
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "this" {
+  cluster_name = aws_ecs_cluster.this.name
+
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+
+  default_capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
   }
 }

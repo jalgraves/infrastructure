@@ -26,6 +26,18 @@ data "aws_iam_policy_document" "secrets_read_only" {
       data.aws_secretsmanager_secret_version.beantownpub.arn
     ]
   }
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey"
+    ]
+
+    resources = [
+      "arn:aws:kms:${local.configs.region}:${local.account_id}:key/aws/secretsmanager"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "secrets_policy" {

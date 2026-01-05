@@ -35,7 +35,8 @@ locals {
       image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/menu-api:0.1.20"
       healthcheck        = "/v1/menu/healthz"
       certificate_domain = "beantownpub.com"
-      desired_count      = 2
+      desired_count      = 1
+      capacity_provider  = "FARGATE"
       secrets = [
         {
           name      = "LOG_LEVEL"
@@ -71,87 +72,89 @@ locals {
         }
       ]
     }
-    contact-api = {
-      port               = 5012,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/contact-api:0.1.22"
-      healthcheck        = "/v1/contact/healthz"
-      certificate_domain = "beantownpub.com"
-      desired_count      = 1
-      secrets = [
-        {
-          name      = "AWS_DEFAULT_REGION"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_DEFAULT_REGION::"
-        },
-        {
-          name      = "AWS_ACCESS_KEY_ID"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_ACCESS_KEY_ID::"
-        },
-        {
-          name      = "AWS_SECRET_ACCESS_KEY"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_SECRET_ACCESS_KEY::"
-        },
-        {
-          name      = "API_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:API_PASSWORD::"
-        },
-        {
-          name      = "API_USERNAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:API_USERNAME::"
-        },
-        {
-          name      = "LOG_LEVEL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:LOG_LEVEL::"
-        },
-        {
-          name      = "PRIMARY_EMAIL_RECIPIENT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:PRIMARY_EMAIL_RECIPIENT::"
-        },
-        {
-          name      = "SECONDARY_EMAIL_RECIPIENT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SECONDARY_EMAIL_RECIPIENT::"
-        },
-        {
-          name      = "SLACK_USER"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_USER::"
-        },
-        {
-          name      = "SLACK_WEBHOOK_URL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_WEBHOOK_URL::"
-        },
-        {
-          name      = "SUPPORT_EMAIL_ADDRESS"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SUPPORT_EMAIL_ADDRESS::"
-        },
-        {
-          name      = "SUPPORT_PHONE_NUMBER"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SUPPORT_PHONE_NUMBER::"
-        },
-        {
-          name      = "TEST_EMAIL_RECIPIENT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:TEST_EMAIL_RECIPIENT::"
-        },
-        {
-          name      = "SLACK_ORDERS_CHANNEL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_ORDERS_CHANNEL::"
-        },
-        {
-          name      = "SLACK_ORDERS_WEBHOOK_URL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_ORDERS_WEBHOOK_URL::"
-        },
-        {
-          name      = "SLACK_PARTYS_CHANNEL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_PARTYS_CHANNEL::"
-        }
-      ]
-    }
+    # contact-api = {
+    #   port               = 5012,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/contact-api:0.1.22"
+    #   healthcheck        = "/v1/contact/healthz"
+    #   certificate_domain = "beantownpub.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE"
+    #   secrets = [
+    #     {
+    #       name      = "AWS_DEFAULT_REGION"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_DEFAULT_REGION::"
+    #     },
+    #     {
+    #       name      = "AWS_ACCESS_KEY_ID"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_ACCESS_KEY_ID::"
+    #     },
+    #     {
+    #       name      = "AWS_SECRET_ACCESS_KEY"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:AWS_SECRET_ACCESS_KEY::"
+    #     },
+    #     {
+    #       name      = "API_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:API_PASSWORD::"
+    #     },
+    #     {
+    #       name      = "API_USERNAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:API_USERNAME::"
+    #     },
+    #     {
+    #       name      = "LOG_LEVEL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:LOG_LEVEL::"
+    #     },
+    #     {
+    #       name      = "PRIMARY_EMAIL_RECIPIENT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:PRIMARY_EMAIL_RECIPIENT::"
+    #     },
+    #     {
+    #       name      = "SECONDARY_EMAIL_RECIPIENT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SECONDARY_EMAIL_RECIPIENT::"
+    #     },
+    #     {
+    #       name      = "SLACK_USER"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_USER::"
+    #     },
+    #     {
+    #       name      = "SLACK_WEBHOOK_URL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_WEBHOOK_URL::"
+    #     },
+    #     {
+    #       name      = "SUPPORT_EMAIL_ADDRESS"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SUPPORT_EMAIL_ADDRESS::"
+    #     },
+    #     {
+    #       name      = "SUPPORT_PHONE_NUMBER"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SUPPORT_PHONE_NUMBER::"
+    #     },
+    #     {
+    #       name      = "TEST_EMAIL_RECIPIENT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:TEST_EMAIL_RECIPIENT::"
+    #     },
+    #     {
+    #       name      = "SLACK_ORDERS_CHANNEL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_ORDERS_CHANNEL::"
+    #     },
+    #     {
+    #       name      = "SLACK_ORDERS_WEBHOOK_URL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_ORDERS_WEBHOOK_URL::"
+    #     },
+    #     {
+    #       name      = "SLACK_PARTYS_CHANNEL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.contact-api.arn}:SLACK_PARTYS_CHANNEL::"
+    #     }
+    #   ]
+    # }
     beantownpub = {
       port               = 3000,
       public             = true
       image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/beantownpub:0.1.67"
       healthcheck        = "/"
       certificate_domain = "beantownpub.com"
-      desired_count      = 2
+      desired_count      = 1
+      capacity_provider  = "FARGATE"
       secrets = [
         {
           name      = "API_PASSWORD"
@@ -198,6 +201,7 @@ locals {
       healthcheck        = "/"
       certificate_domain = "thehubpub.com"
       desired_count      = 1
+      capacity_provider  = "FARGATE"
       secrets = [
         {
           name      = "API_PASSWORD"
@@ -237,14 +241,15 @@ locals {
         }
       ]
     }
-    wavelengths = {
-      port               = 8080,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths"
-      healthcheck        = "/"
-      certificate_domain = "wavelengths-brookline.com"
-      desired_count      = 1
-    }
+    # wavelengths = {
+    #   port               = 8080,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths"
+    #   healthcheck        = "/"
+    #   certificate_domain = "wavelengths-brookline.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE"
+    # }
     drdavisicecream = {
       port               = 3034,
       public             = true
@@ -252,6 +257,7 @@ locals {
       healthcheck        = "/"
       certificate_domain = "drdavisicecream.com"
       desired_count      = 1
+      capacity_provider  = "FARGATE_SPOT"
     }
     psql = {
       port               = 5432,
@@ -260,6 +266,7 @@ locals {
       healthcheck        = null
       certificate_domain = null
       desired_count      = 1
+      capacity_provider  = "FARGATE"
       secrets = [
         {
           name      = "POSTGRES_PASSWORD"
