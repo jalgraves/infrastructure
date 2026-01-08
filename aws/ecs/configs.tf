@@ -244,7 +244,7 @@ locals {
     wavelengths = {
       port               = 3077,
       public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths:0.1.7"
+      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths:0.1.8"
       healthcheck        = "/"
       certificate_domain = "wavelengths-brookline.com"
       desired_count      = 1
