@@ -201,7 +201,7 @@ locals {
       healthcheck        = "/"
       certificate_domain = "thehubpub.com"
       desired_count      = 1
-      capacity_provider  = "FARGATE"
+      capacity_provider  = "FARGATE_SPOT"
       secrets = [
         {
           name      = "API_PASSWORD"
@@ -241,15 +241,15 @@ locals {
         }
       ]
     }
-    # wavelengths = {
-    #   port               = 8080,
-    #   public             = true
-    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths"
-    #   healthcheck        = "/"
-    #   certificate_domain = "wavelengths-brookline.com"
-    #   desired_count      = 1
-    #   capacity_provider  = "FARGATE"
-    # }
+    wavelengths = {
+      port               = 3077,
+      public             = true
+      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths:0.1.7"
+      healthcheck        = "/"
+      certificate_domain = "wavelengths-brookline.com"
+      desired_count      = 1
+      capacity_provider  = "FARGATE_SPOT"
+    }
     drdavisicecream = {
       port               = 3034,
       public             = true
