@@ -154,7 +154,7 @@ locals {
       healthcheck        = "/"
       certificate_domain = "beantownpub.com"
       desired_count      = 1
-      capacity_provider  = "FARGATE"
+      capacity_provider  = "FARGATE_SPOT"
       secrets = [
         {
           name      = "API_PASSWORD"
