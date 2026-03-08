@@ -29,49 +29,49 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   configs    = module.configs.values
   services = {
-    menu-api = {
-      port               = 5004,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/menu-api:0.1.20"
-      healthcheck        = "/v1/menu/healthz"
-      certificate_domain = "beantownpub.com"
-      desired_count      = 1
-      capacity_provider  = "FARGATE"
-      secrets = [
-        {
-          name      = "LOG_LEVEL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:LOG_LEVEL::"
-        },
-        {
-          name      = "DATABASE_HOST"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_HOST::"
-        },
-        {
-          name      = "DATABASE_USERNAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_USERNAME::"
-        },
-        {
-          name      = "DATABASE_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_PASSWORD::"
-        },
-        {
-          name      = "DATABASE_PORT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_PORT::"
-        },
-        {
-          name      = "DATABASE_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_NAME::"
-        },
-        {
-          name      = "API_USERNAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:API_USERNAME::"
-        },
-        {
-          name      = "API_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:API_PASSWORD::"
-        }
-      ]
-    }
+    # menu-api = {
+    #   port               = 5004,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/menu-api:0.1.20"
+    #   healthcheck        = "/v1/menu/healthz"
+    #   certificate_domain = "beantownpub.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE"
+    #   secrets = [
+    #     {
+    #       name      = "LOG_LEVEL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:LOG_LEVEL::"
+    #     },
+    #     {
+    #       name      = "DATABASE_HOST"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_HOST::"
+    #     },
+    #     {
+    #       name      = "DATABASE_USERNAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_USERNAME::"
+    #     },
+    #     {
+    #       name      = "DATABASE_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_PASSWORD::"
+    #     },
+    #     {
+    #       name      = "DATABASE_PORT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_PORT::"
+    #     },
+    #     {
+    #       name      = "DATABASE_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:DATABASE_NAME::"
+    #     },
+    #     {
+    #       name      = "API_USERNAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:API_USERNAME::"
+    #     },
+    #     {
+    #       name      = "API_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.menu-api.arn}:API_PASSWORD::"
+    #     }
+    #   ]
+    # }
     # contact-api = {
     #   port               = 5012,
     #   public             = true
@@ -150,7 +150,7 @@ locals {
     beantownpub = {
       port               = 3000,
       public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/beantownpub:0.1.67"
+      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/beantownpub:0.1.70"
       healthcheck        = "/"
       certificate_domain = "beantownpub.com"
       desired_count      = 1
@@ -197,7 +197,7 @@ locals {
     thehubpub = {
       port               = 3037,
       public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/thehubpub:0.1.20"
+      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/thehubpub:0.1.22"
       healthcheck        = "/"
       certificate_domain = "thehubpub.com"
       desired_count      = 1
@@ -259,64 +259,64 @@ locals {
       desired_count      = 1
       capacity_provider  = "FARGATE_SPOT"
     }
-    psql = {
-      port               = 5432,
-      public             = false
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/psql:latest"
-      healthcheck        = null
-      certificate_domain = null
-      desired_count      = 1
-      capacity_provider  = "FARGATE"
-      secrets = [
-        {
-          name      = "POSTGRES_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:POSTGRES_PASSWORD::"
-        },
-        {
-          name      = "DB_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PASS::"
-        },
-        {
-          name      = "DB_ADMIN_PASS"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_ADMIN_PASS::"
-        },
-        {
-          name      = "DB_ADMIN_USER"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_ADMIN_USER::"
-        },
-        {
-          name      = "DB_PASS"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PASS::"
-        },
-        {
-          name      = "DB_USER"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_USER::"
-        },
-        {
-          name      = "DB_PORT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PORT::"
-        },
-        {
-          name      = "CONTACT_DB_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:CONTACT_DB_NAME::"
-        },
-        {
-          name      = "CONTENT_DB_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:CONTENT_DB_NAME::"
-        },
-        {
-          name      = "MENU_DB_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:MENU_DB_NAME::"
-        },
-        {
-          name      = "MERCH_DB_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:MERCH_DB_NAME::"
-        },
-        {
-          name      = "USERS_DB_NAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:USERS_DB_NAME::"
-        }
-      ]
-    }
+    # psql = {
+    #   port               = 5432,
+    #   public             = false
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/psql:latest"
+    #   healthcheck        = null
+    #   certificate_domain = null
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE"
+    #   secrets = [
+    #     {
+    #       name      = "POSTGRES_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:POSTGRES_PASSWORD::"
+    #     },
+    #     {
+    #       name      = "DB_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PASS::"
+    #     },
+    #     {
+    #       name      = "DB_ADMIN_PASS"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_ADMIN_PASS::"
+    #     },
+    #     {
+    #       name      = "DB_ADMIN_USER"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_ADMIN_USER::"
+    #     },
+    #     {
+    #       name      = "DB_PASS"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PASS::"
+    #     },
+    #     {
+    #       name      = "DB_USER"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_USER::"
+    #     },
+    #     {
+    #       name      = "DB_PORT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:DB_PORT::"
+    #     },
+    #     {
+    #       name      = "CONTACT_DB_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:CONTACT_DB_NAME::"
+    #     },
+    #     {
+    #       name      = "CONTENT_DB_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:CONTENT_DB_NAME::"
+    #     },
+    #     {
+    #       name      = "MENU_DB_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:MENU_DB_NAME::"
+    #     },
+    #     {
+    #       name      = "MERCH_DB_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:MERCH_DB_NAME::"
+    #     },
+    #     {
+    #       name      = "USERS_DB_NAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.psql.arn}:USERS_DB_NAME::"
+    #     }
+    #   ]
+    # }
   }
 }
