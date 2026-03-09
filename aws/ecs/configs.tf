@@ -150,7 +150,7 @@ locals {
     beantownpub = {
       port               = 3000,
       public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/beantownpub:0.1.70"
+      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/beantownpub:0.1.72"
       healthcheck        = "/"
       certificate_domain = "beantownpub.com"
       desired_count      = 1
