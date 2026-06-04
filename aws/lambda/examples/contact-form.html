@@ -1,0 +1,69 @@
+<!--
+  Example contact form for the CloudFront frontends.
+
+  Replace FUNCTION_URL with the `contact_form_function_url` Terraform output,
+  and set the hidden `site` field to the matching key in the workspace config
+  (modules/workspace_configs/production-use1-lambda.tf -> contact_form.sites).
+-->
+<form id="contact-form">
+  <input type="hidden" name="site" value="nautoriouscharters" />
+  <input name="name" type="text" placeholder="Your name" required />
+  <input name="email" type="email" placeholder="you@example.com" required />
+  <input name="phone" type="tel" placeholder="Phone (optional)" />
+
+  <select name="departure_point" required>
+    <option value="" disabled selected>Select a departure point</option>
+    <option value="Miami (Aquila 54)">Miami (Aquila 54)</option>
+    <option value="St. Pete Beach (Aquila 36)">St. Pete Beach (Aquila 36)</option>
+  </select>
+
+  <!--
+    Single date: send only start_date.
+    Range: send start_date and end_date (both YYYY-MM-DD; end requires start).
+  -->
+  <input name="start_date" type="date" />
+  <input name="end_date" type="date" />
+
+  <textarea name="description" placeholder="How can we help?" required></textarea>
+  <button type="submit">Send</button>
+  <p class="form-status" hidden></p>
+</form>
+
+<script>
+  const FUNCTION_URL = "https://REPLACE_ME.lambda-url.us-east-1.on.aws/";
+
+  const form = document.getElementById("contact-form");
+  const status = form.querySelector(".form-status");
+  const button = form.querySelector("button");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    button.disabled = true;
+    status.hidden = true;
+
+    try {
+      const response = await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.ok) {
+        form.reset();
+        status.textContent = "Thanks — your message has been sent.";
+      } else {
+        status.textContent = data.error || "Something went wrong. Please try again.";
+      }
+    } catch (err) {
+      status.textContent = "Network error. Please try again.";
+    } finally {
+      status.hidden = false;
+      button.disabled = false;
+    }
+  });
+</script>

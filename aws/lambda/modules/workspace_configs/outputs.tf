@@ -4,11 +4,11 @@
 
 locals {
   workspaces = {
-    production-use1-ses = local.production-use1-ses
+    production-use1-lambda = local.production-use1-lambda
   }
 }
 
 output "values" {
-  description = "These are the inputs that will be used to create the resources in the root `iam/` directory."
+  description = "These are the inputs that will be used to create the resources in the root `lambda/` directory."
   value       = local.workspaces[var.workspace]
 }

@@ -3,13 +3,13 @@
 # +-+-+-+-+ +-+-+-+-+-+-+-+-+-+ +-+-+-+-+
 
 locals {
-  production-aws-ses-use1 = {
+  production-use1-ses = {
     environment = "production"
     region      = "us-east-1"
     region_code = "use1"
     identities = {
-      beantownpub = {
-        domain_name = "beantownpub.com"
+      nautoriouscharters = {
+        domain_name = "nautoriouscharters.com"
       }
     }
   }

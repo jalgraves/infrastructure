@@ -194,71 +194,71 @@ locals {
         }
       ]
     }
-    thehubpub = {
-      port               = 3037,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/thehubpub:0.1.22"
-      healthcheck        = "/"
-      certificate_domain = "thehubpub.com"
-      desired_count      = 1
-      capacity_provider  = "FARGATE_SPOT"
-      secrets = [
-        {
-          name      = "API_PASSWORD"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:API_PASSWORD::"
-        },
-        {
-          name      = "API_USERNAME"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:API_USERNAME::"
-        },
-        {
-          name      = "CONTACT_API_HOST"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_HOST::"
-        },
-        {
-          name      = "CONTACT_API_PROTOCOL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_PROTOCOL::"
-        },
-        {
-          name      = "CONTACT_API_PORT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_PORT::"
-        },
-        {
-          name      = "MENU_API_HOST"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_HOST::"
-        },
-        {
-          name      = "MENU_API_PROTOCOL"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_PROTOCOL::"
-        },
-        {
-          name      = "MENU_API_PORT"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_PORT::"
-        },
-        {
-          name      = "NODE_ENV"
-          valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:NODE_ENV::"
-        }
-      ]
-    }
-    wavelengths = {
-      port               = 3077,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths:0.1.8"
-      healthcheck        = "/"
-      certificate_domain = "wavelengths-brookline.com"
-      desired_count      = 1
-      capacity_provider  = "FARGATE_SPOT"
-    }
-    drdavisicecream = {
-      port               = 3034,
-      public             = true
-      image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/drdavisicecream:0.1.27-9b4ad10"
-      healthcheck        = "/"
-      certificate_domain = "drdavisicecream.com"
-      desired_count      = 1
-      capacity_provider  = "FARGATE_SPOT"
-    }
+    # thehubpub = {
+    #   port               = 3037,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/thehubpub:0.1.22"
+    #   healthcheck        = "/"
+    #   certificate_domain = "thehubpub.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE_SPOT"
+    #   secrets = [
+    #     {
+    #       name      = "API_PASSWORD"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:API_PASSWORD::"
+    #     },
+    #     {
+    #       name      = "API_USERNAME"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:API_USERNAME::"
+    #     },
+    #     {
+    #       name      = "CONTACT_API_HOST"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_HOST::"
+    #     },
+    #     {
+    #       name      = "CONTACT_API_PROTOCOL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_PROTOCOL::"
+    #     },
+    #     {
+    #       name      = "CONTACT_API_PORT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:CONTACT_API_PORT::"
+    #     },
+    #     {
+    #       name      = "MENU_API_HOST"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_HOST::"
+    #     },
+    #     {
+    #       name      = "MENU_API_PROTOCOL"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_PROTOCOL::"
+    #     },
+    #     {
+    #       name      = "MENU_API_PORT"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:MENU_API_PORT::"
+    #     },
+    #     {
+    #       name      = "NODE_ENV"
+    #       valueFrom = "${data.aws_secretsmanager_secret_version.beantownpub.arn}:NODE_ENV::"
+    #     }
+    #   ]
+    # }
+    # wavelengths = {
+    #   port               = 3077,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/wavelengths:0.1.8"
+    #   healthcheck        = "/"
+    #   certificate_domain = "wavelengths-brookline.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE_SPOT"
+    # }
+    # drdavisicecream = {
+    #   port               = 3034,
+    #   public             = true
+    #   image              = "${local.account_id}.dkr.ecr.us-east-1.amazonaws.com/drdavisicecream:0.1.27-9b4ad10"
+    #   healthcheck        = "/"
+    #   certificate_domain = "drdavisicecream.com"
+    #   desired_count      = 1
+    #   capacity_provider  = "FARGATE_SPOT"
+    # }
     # psql = {
     #   port               = 5432,
     #   public             = false

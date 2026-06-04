@@ -49,4 +49,5 @@ module "ns1" {
   cname_record = each.value.record_name
   cname_target = each.value.record_value
   dns_zone     = each.value.domain
+  depends_on   = [aws_sesv2_email_identity.this]
 }
